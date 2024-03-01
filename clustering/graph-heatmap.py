@@ -182,5 +182,8 @@ for idx , params in enumerate(list(ParameterGrid(paramsDict))):
 
 
 plt.scatter(*zip(*Inter_Mean))
+plt.xlabel('Number of Clusters')
+plt.ylabel('Inter-cluster CS-Distance')
+plt.title('Inter-cluster CS-Distance vs Number of Clusters')
 plt.savefig('clustersGraph/Inter_Mean.png')
 plt.close()
