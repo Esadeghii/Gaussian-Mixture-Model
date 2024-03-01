@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import networkx as nx
 import matplotlib.pyplot as plt
 from sklearn.cluster import SpectralClustering
 from sklearn.model_selection import ParameterGrid
@@ -13,15 +12,15 @@ warnings.filterwarnings('ignore')
 if 'clustersGraph' not in os.listdir():
     os.mkdir('clustersGraph')
 
-data = pd.read_excel('gaussian_all_data.xlsx' )
+data = pd.read_excel('./clustering/gaussian_all_data.xlsx' )
 data = data.fillna('0')
 data = data.dropna()
-ddata = pd.read_excel('CSdistances_gaussian_all_data.xlsx' ).fillna(0).to_numpy(float)
+ddata = pd.read_excel('./clustering/CSdistances_gaussian_all_data.xlsx' ).fillna(0).to_numpy(float)
 flattenddata = list(chain.from_iterable(ddata)) ###
 #delta = max(flattenddata)-min(flattenddata) ###
-sequenceNames = list(pd.read_excel('gaussian_all_data.xlsx')['Sequence'])
+sequenceNames = list(pd.read_excel('./clustering/gaussian_all_data.xlsx')['Sequence'])
 index = 15
-mini = 410#np.min(np.array(datas, dtype="float")) 
+mini = 410 #np.min(np.array(datas, dtype="float")) 
 maxi = 1100#np.max(np.array(datas, dtype="float"))
 tresholdv = (maxi - mini)//index
 ranges = [(-np.inf,mini)]+[(i,i+tresholdv)  for i in np.arange(mini,maxi,tresholdv) ]+[(maxi,np.inf)]
@@ -36,22 +35,22 @@ def colerize(number , datas,tr):
         return str([idx for idx ,rng in enumerate(ranges) if rng[0]<=float(number)<rng[1]][0])
 
 
-#numClasters = list(range(3,9,1)) # type int
-numClasters = [7,8]
+numClasters = list(range(4,7,1)) # type int
+#numClasters = [7,8]
 eigen_solvers = [None] # {‘arpack’, ‘lobpcg’, ‘amg’}, default=None
 n_components = [None] # type int, default=None
 random_states = [100] # type int, default=None
 n_inits = [30] # type int, default=10
 gammas = [1.0] # type float, default=1.0
 affinitys =  ['precomputed']# str or callable, default=’rbf’
-n_neighbors = [10, 50,70] # int, default=10
+n_neighbors = [50] # int, default=10
 eigen_tols = ['auto'] # float, default=”auto”
 assign_labels = ['kmeans'] # {‘kmeans’, ‘discretize’, ‘cluster_qr’}, default=’kmeans’
 degrees = [3] # type float
 coef0s = [1] # type float
 kernel_params = [None] # dict of str to any, default=None
 n_jobs = [None] #int, default=None 
-deltas = [0.7, 0.8,0.9, 1]
+deltas = [0.8]
 # affinity='precomputed', you can ignore the n_jobs parameter, and it won't impact the clustering process. 
 
 paramsDict = {
@@ -71,7 +70,7 @@ paramsDict = {
         'n_job' : n_jobs,
         'delta' :deltas
 } 
-
+Inter_Mean = []
 for idx , params in enumerate(list(ParameterGrid(paramsDict))):
         if str('-'.join(map(str, params.values()))) not in os.listdir('clustersGraph'):os.mkdir('clustersGraph/'+str('-'.join(map(str, params.values()))))
         # try:
@@ -138,6 +137,10 @@ for idx , params in enumerate(list(ParameterGrid(paramsDict))):
                 cldata.append(np.mean(np.array(cluster_data[['Peak 1 a Log','Peak 1 b','Peak 1 c','Peak 2 a Log','Peak 2 b','Peak 2 c','Peak 3 a Log','Peak 3 b','Peak 3 c', 'Peak NIR a Log', 'Peak NIR b', 'Peak NIR c']].to_numpy(),dtype=float),axis=0))
         dis = Distence(pd.DataFrame(cldata,columns=['Peak 1 a Log','Peak 1 b','Peak 1 c','Peak 2 a Log','Peak 2 b','Peak 2 c','Peak 3 a Log','Peak 3 b','Peak 3 c', 'Peak NIR a Log', 'Peak NIR b', 'Peak NIR c']))
         dis.to_excel(f'clustersGraph/{str("-".join(map(str, params.values())))}/cluster_{cluster_label}_distences.xlsx',index=False)    
+        
+        dis_Mean = np.mean(dis.to_numpy())
+        Inter_Mean.append((params["numClaster"], dis_Mean))
+
 
         # Mask the lower triangle of the matrix (including the diagonal)
         mask = np.triu(np.ones_like(dis, dtype=bool))
@@ -177,3 +180,7 @@ for idx , params in enumerate(list(ParameterGrid(paramsDict))):
         plt.savefig(f'clustersGraph/{str("-".join(map(str, params.values())))}/clastersHeat.png')
         plt.close()
 
+
+plt.scatter(*zip(*Inter_Mean))
+plt.savefig('clustersGraph/Inter_Mean.png')
+plt.close()
