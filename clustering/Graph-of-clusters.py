@@ -36,6 +36,7 @@ for i in range(len(data_per_cluster)):
     for j in range(i+1,len(data_per_cluster)):
         G.add_edge(i,j,weight=distance_clusters[i][j])
 
+
 pos = nx.spring_layout(G)
 edge_labels=dict([((u,v,),d['weight'])
              for u,v,d in G.edges(data=True)])
