@@ -33,16 +33,16 @@ def genFigure(filePath):
     distence_m = data["distence_m"]
 
     #fig, ax = plt.subplots(3)
-    fig, ax = plt.subplots(3)
+    fig, ax = plt.subplots(4)
     fig.set_size_inches(8, 7)
 
-    fig2, ax2 = plt.subplots(math.ceil(len(distence[0])/3),3)
-    fig2.set_size_inches(8, 7)
-    fig3, ax3 = plt.subplots(math.ceil(len(distence_m[0])/3),3)
-    fig3.set_size_inches(8, 7)
+    # fig2, ax2 = plt.subplots(math.ceil(len(distence[0])/3),3)
+    # fig2.set_size_inches(8, 7)
+    # fig3, ax3 = plt.subplots(math.ceil(len(distence_m[0])/3),3)
+    # fig3.set_size_inches(8, 7)
     fig.suptitle( r" $\beta$=" + str(beta) + r" $\gamma$=" + str(gamma) + r" $\delta$=" + str(delta) + " latentDims=" + str(latentDims) + " lstmLayers=" + str(lstmLayers) + " Dropout=" + str(drop) + " lstmInfo=" + str(lstmInfo) + " linearWidth" , fontsize=12)
-    fig2.suptitle( r" $\beta$=" + str(beta) + r" $\gamma$=" + str(gamma) + r" $\delta$=" + str(delta) + " latentDims=" + str(latentDims) + " lstmLayers=" + str(lstmLayers) + " Dropout=" + str(drop) + " lstmInfo=" + str(lstmInfo) + " linearWidth" , fontsize=12)
-    fig3.suptitle( r" $\beta$=" + str(beta) + r" $\gamma$=" + str(gamma) + r" $\delta$=" + str(delta) + " latentDims=" + str(latentDims) + " lstmLayers=" + str(lstmLayers) + " Dropout=" + str(drop) + " lstmInfo=" + str(lstmInfo) + " linearWidth" , fontsize=12)
+    # fig2.suptitle( r" $\beta$=" + str(beta) + r" $\gamma$=" + str(gamma) + r" $\delta$=" + str(delta) + " latentDims=" + str(latentDims) + " lstmLayers=" + str(lstmLayers) + " Dropout=" + str(drop) + " lstmInfo=" + str(lstmInfo) + " linearWidth" , fontsize=12)
+    # fig3.suptitle( r" $\beta$=" + str(beta) + r" $\gamma$=" + str(gamma) + r" $\delta$=" + str(delta) + " latentDims=" + str(latentDims) + " lstmLayers=" + str(lstmLayers) + " Dropout=" + str(drop) + " lstmInfo=" + str(lstmInfo) + " linearWidth" , fontsize=12)
 
 
     ax[0].plot(epochsT, rLossT, label="r Loss")
@@ -69,26 +69,36 @@ def genFigure(filePath):
     ax[2].text(x=1300, y=0.62, s=f"Training Accuracy: {'{:.3f}'.format(accT[len(accT) - 1])}")
     ax[2].text(x=1300, y=0.50, s=f"Testing Accuracy: {'{:.3f}'.format(accV[len(accV) - 1])}")
     ax[2].label_outer()
+
+    ax[3].plot(np.mean(distence,axis=1), label="Train Distance")
+    ax[3].plot(np.mean(distence_m,axis=1), label="Valid Distance")
+    ax[3].legend(loc="center left", bbox_to_anchor=(1, 0.5))
+    ax[3].set(xlabel="epoch",ylabel="Within Cluster Distance AVG")
+    # ax[3].xticks(list(range(0,len(distence_m))))
+    # ax[3].xticklabels(list(np.array(list(range(0,len(distence_m))))*10))
+    ax[3].text(x=1300, y=0.62, s=f"Training Distance: {'{:.3f}'.format(accT[len(accT) - 1])}")
+    ax[3].text(x=1300, y=0.50, s=f"Testing Distance: {'{:.3f}'.format(accV[len(accV) - 1])}")
+    ax[3].label_outer()
     plt.xticks(range(len(trainMat)))
 
-    clusterscolor=['R-FR','G', 'N', 'G-R', 'G-N', 'G-FR']
-    for di in range(len(distence[0])):
-        y1 = np.array(distence[:,di])
-        idx = di // 3
-        jdx = di % 3
-        #ax2[idx][jdx].plot(y1 , label=f'cluster {di}')
-        ax2[idx][jdx].plot(y1 , label=clusterscolor[di])
-        ax2[idx][jdx].legend()
+    # clusterscolor=['R-FR','G', 'N', 'G-R', 'G-N', 'G-FR']
+    # for di in range(len(distence[0])):
+    #     y1 = np.array(distence[:,di])
+    #     idx = di // 3
+    #     jdx = di % 3
+    #     #ax2[idx][jdx].plot(y1 , label=f'cluster {di}')
+    #     ax2[idx][jdx].plot(y1 , label=clusterscolor[di])
+    #     ax2[idx][jdx].legend()
 
 
     
-    for di_m in range(len(distence_m[0])):
-        y1_ = np.array(distence_m[:,di_m])
-        idx = di_m // 3
-        jdx = di_m % 3
-        #ax3[idx][jdx].plot(y1_ , label=f'cluster {di_m}')
-        ax3[idx][jdx].plot(y1_ , label=clusterscolor[di_m])
-        ax3[idx][jdx].legend()
+    # for di_m in range(len(distence_m[0])):
+    #     y1_ = np.array(distence_m[:,di_m])
+    #     idx = di_m // 3
+    #     jdx = di_m % 3
+    #     #ax3[idx][jdx].plot(y1_ , label=f'cluster {di_m}')
+    #     ax3[idx][jdx].plot(y1_ , label=clusterscolor[di_m])
+    #     ax3[idx][jdx].legend()
     
     # ax[8].set(xlabel="epoch",ylabel='distence: '+str(round(np.mean(wavg),4)))
     # ax[8].legend(loc="center left", bbox_to_anchor=(1, 0.5), ncol=2)
@@ -96,14 +106,14 @@ def genFigure(filePath):
    
 
     fig.subplots_adjust(right=0.75)
-    fig2.subplots_adjust(right=0.75)
-    fig3.subplots_adjust(right=0.75)
+    # fig2.subplots_adjust(right=0.75)
+    # fig3.subplots_adjust(right=0.75)
     plt.setp(ax, xticks=list(range(0,len(trainMat),100)), xticklabels=list(range(0,len(trainMat),100)))    
-    plt.setp(ax2, xticks=list(range(0,len(distence_m))), xticklabels=list(np.array(list(range(0,len(distence_m))))*100))    
-    plt.setp(ax3, xticks=list(range(0,len(distence_m))), xticklabels=list(np.array(list(range(0,len(distence_m))))*100)) 
-    fig2.tight_layout()
-    fig3.tight_layout()
-    return fig,fig2,fig3
+    # plt.setp(ax2, xticks=list(range(0,len(distence_m))), xticklabels=list(np.array(list(range(0,len(distence_m))))*10))    
+    # plt.setp(ax3, xticks=list(range(0,len(distence_m))), xticklabels=list(np.array(list(range(0,len(distence_m))))*10)) 
+    # fig2.tight_layout()
+    # fig3.tight_layout()
+    return fig#,fig2,fig3
  
 
 
@@ -128,10 +138,10 @@ else:
     f.savefig("./graphs/latest.png") """
 
 def genPlotForRun(runsPath, run, graphsPath, graph):
-    f,f2,f3 = genFigure(runsPath+"/"+run)
+    f = genFigure(runsPath+"/"+run)
     f.savefig(graphsPath+"/"+graph)
-    f2.savefig(graphsPath+"/2"+graph)
-    f3.savefig(graphsPath+"/3"+graph)
+    # f2.savefig(graphsPath+"/2"+graph)
+    # f3.savefig(graphsPath+"/3"+graph)
 
 
 #genFigure("all-results/1-18-22-res/runs/a19lds19b0.007g1.0d1.0h13.npz")

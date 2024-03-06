@@ -136,7 +136,7 @@ class SequenceTrainer(Trainer):
                     #our supervized training
                 if weightedLoss == False:
                     reg_loss += self.compute_reg_loss(
-                        latent_sample,inputs,labels, mean_z, std_z, gamma=self.gamma , factor=self.delta)
+                        latent_sample,inputs,labels, mean_z, std_z, gamma=self.gamma ,train = train, factor=self.delta )
                 else:
                     reg_loss += self.compute_reg_loss_weighted(
                     self, latent_sample,inputs, labels 
@@ -157,8 +157,6 @@ class SequenceTrainer(Trainer):
                 self.validList = np.vstack((self.validList, 
                     [self.cur_epoch_num, r_loss.item(), kld_loss.item(),
                     reg_loss.item(), loss.item(), accuracy.item()]))
-        if all(torch.isnan(loss)):
-            raise ValueError('loss is nan')            
 
         return loss, accuracy
 

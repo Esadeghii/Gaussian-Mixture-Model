@@ -23,8 +23,8 @@ GmmDataS = GmmData['Sequence'].to_list()
 clusternums = len(set(GmmData['Label'].to_list()))
 enc = OneHotEncoder()
 enc.fit(np.array(ALPHABET).reshape(-1,1))
-#GmmDData = np.zeros((1963,1963))
-#GMMSums = sum(sum(GmmDData))#.to_numpy()))
+# GmmDData = np.zeros((1963,1963))
+# GMMSums = sum(sum(GmmDData))#.to_numpy()))
 GMMSums = sum(sum(GmmDData.to_numpy()))
 def Distencecs(sequence):
 
@@ -204,8 +204,8 @@ class Trainer(ABC):
             if epoch_index == 0:distence.append(all_latent_code)
             if epoch_index == 0 :distence_mun.append(all_latent_code_minus)
 
-            if epoch_index % 100 == 99:distence.append(all_latent_code)
-            if epoch_index % 100 == 99 :distence_mun.append(all_latent_code_minus)
+            if epoch_index % 10 == 9:distence.append(all_latent_code)
+            if epoch_index % 10 == 9 :distence_mun.append(all_latent_code_minus)
             all_latent_code = [0]*clusternums
             all_latent_code_minus = [0]*clusternums
         return distence,distence_mun
@@ -478,16 +478,16 @@ class Trainer(ABC):
         return kld
 
     @staticmethod
-    def compute_reg_loss(z, inputs,label,latent_code_mean, latent_code_std, gamma, factor=1.0):
+    def compute_reg_loss(z, inputs,label,latent_code_mean, latent_code_std, gamma,train, factor=1.0):
         """
         Computes the regularization loss
         """
         
-        reg_loss = Trainer.reg_loss_sign(z, inputs,label, latent_code_mean, latent_code_std, factor=factor)
+        reg_loss = Trainer.reg_loss_sign(z, inputs,label, latent_code_mean, latent_code_std,train= train, factor=factor)
         return gamma * reg_loss
 
     @staticmethod
-    def reg_loss_sign(latent_code, sequence,label, latent_code_mean, latent_code_std, factor=1.0):
+    def reg_loss_sign(latent_code, sequence,label, latent_code_mean, latent_code_std,train, factor=1.0):
         """
         Computes the regularization loss given the latent code and attribute
         Args:
@@ -548,8 +548,8 @@ class Trainer(ABC):
         for labs in range(0,clusternums):
             seletedIndex = [idx for idx,i in enumerate(label.numpy().reshape(-1)) if i == labs]
             labeldistsum.append(sum([sum(pairwise_distances[iddx].detach().numpy()) for iddx in seletedIndex]))
-        all_latent_code = np.sum(np.array([list(all_latent_code), labeldistsum]), axis=0)
-        all_latent_code_minus = GMMSums -  np.sum(np.array([list(all_latent_code), labeldistsum]), axis=0)
+        if train :all_latent_code = np.sum(np.array([list(all_latent_code), labeldistsum]), axis=0)
+        else:all_latent_code_minus = GMMSums -  np.sum(np.array([list(all_latent_code), labeldistsum]), axis=0)
 
         # compute attribute distance matrix
         attribute_dist_mat = Distencecs(sequence) #TODO: cs dist func between gmm
