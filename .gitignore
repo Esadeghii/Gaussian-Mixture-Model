@@ -1,7 +1,9 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 .vae/
+.vscode/
 *.py[cod]
+*.pyc[cod]
 *$py.class
 ccghe.zip
 # C extensions

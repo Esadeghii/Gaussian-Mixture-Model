@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import math
+import matplotlib.ticker as mtick
 
 #takes a file path and returns a matplot figure object
 def genFigure(filePath):
@@ -70,16 +71,17 @@ def genFigure(filePath):
     ax[2].text(x=1300, y=0.50, s=f"Testing Accuracy: {'{:.3f}'.format(accV[len(accV) - 1])}")
     ax[2].label_outer()
 
-    ax[3].plot(np.mean(distence,axis=1), label="Train Distance")
-    ax[3].plot(np.mean(distence_m,axis=1), label="Valid Distance")
+    ax[3].plot(list(range(0,len(distence)*10,10)),np.mean(distence,axis=1), label="Train Distance")
+    ax[3].plot(list(range(0,len(distence_m)*10,10)),np.mean(distence_m,axis=1), label="Valid Distance")
     ax[3].legend(loc="center left", bbox_to_anchor=(1, 0.5))
     ax[3].set(xlabel="epoch",ylabel="Within Cluster Distance AVG")
     # ax[3].xticks(list(range(0,len(distence_m))))
     # ax[3].xticklabels(list(np.array(list(range(0,len(distence_m))))*10))
-    ax[3].text(x=1300, y=0.62, s=f"Training Distance: {'{:.3f}'.format(accT[len(accT) - 1])}")
-    ax[3].text(x=1300, y=0.50, s=f"Testing Distance: {'{:.3f}'.format(accV[len(accV) - 1])}")
+    # ax[3].text(x=1300, y=0.62, s=f"Training Distance: {'{:.3f}'.format(accT[len(accT) - 1])}")
+    # ax[3].text(x=1300, y=0.50, s=f"Testing Distance: {'{:.3f}'.format(accV[len(accV) - 1])}")
     ax[3].label_outer()
     plt.xticks(range(len(trainMat)))
+    plt.gca().yaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
 
     # clusterscolor=['R-FR','G', 'N', 'G-R', 'G-N', 'G-FR']
     # for di in range(len(distence[0])):
@@ -108,7 +110,7 @@ def genFigure(filePath):
     fig.subplots_adjust(right=0.75)
     # fig2.subplots_adjust(right=0.75)
     # fig3.subplots_adjust(right=0.75)
-    plt.setp(ax, xticks=list(range(0,len(trainMat),100)), xticklabels=list(range(0,len(trainMat),100)))    
+    plt.setp(ax, xticks=list(range(0,len(trainMat),10)), xticklabels=list(range(0,len(trainMat),10)))    
     # plt.setp(ax2, xticks=list(range(0,len(distence_m))), xticklabels=list(np.array(list(range(0,len(distence_m))))*10))    
     # plt.setp(ax3, xticks=list(range(0,len(distence_m))), xticklabels=list(np.array(list(range(0,len(distence_m))))*10)) 
     # fig2.tight_layout()

@@ -18,10 +18,10 @@ from plotRun import genPlotForRun
 os.environ["CUDA_VISIBLE_DEVICES"]=""
 
 batchSize = 32
-numEpochs = 1000
+numEpochs = 20
 betas = [0.007]
-gammas = [0.02, 0.8, 1, 1.3]
-deltas = [0.1, 0.8, 2]
+gammas = [0.02]#, 0.8, 1, 1.3]
+deltas = [0.1]#, 0.8, 2]
 dropout =  [0]
 latentDims= [19]
 lstmLayers = [1]
