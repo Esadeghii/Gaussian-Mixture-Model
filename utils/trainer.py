@@ -549,7 +549,7 @@ class Trainer(ABC):
             seletedIndex = [idx for idx,i in enumerate(label.numpy().reshape(-1)) if i == labs]
             labeldistsum.append(sum([sum(pairwise_distances[iddx].detach().numpy()) for iddx in seletedIndex]))
         if train :all_latent_code = np.sum(np.array([list(all_latent_code), labeldistsum]), axis=0)
-        else:all_latent_code_minus = GMMSums -  np.sum(np.array([list(all_latent_code), labeldistsum]), axis=0)
+        else:all_latent_code_minus = np.sum(np.array([list(all_latent_code), labeldistsum]), axis=0)
 
         # compute attribute distance matrix
         attribute_dist_mat = Distencecs(sequence) #TODO: cs dist func between gmm

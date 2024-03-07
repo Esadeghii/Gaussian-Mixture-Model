@@ -7,10 +7,16 @@ import argparse
 import pandas as pd
 import matplotlib.ticker as mtick
 
-countOfClusters = list(pd.read_excel('data-and-cleaning/supercleanGMMFilteredClusterd.xlsx')['Label'].value_counts().sort_index())
+
 #takes a file path and returns a matplot figure object
 def genFigure(filePath):
     data = np.load(filePath)
+    countOfClustersTrain = dict(pd.DataFrame({'Label':np.load('runs/trainLable.npy', allow_pickle=True).reshape(-1)})['Label'].value_counts().sort_index())
+    countOfClustersVal = dict(pd.DataFrame({'Label':np.load('runs/valLable.npy', allow_pickle=True).reshape(-1)})['Label'].value_counts().sort_index())
+    _ =[countOfClustersVal.update({i:0}) for i in countOfClustersTrain.keys() if i not in countOfClustersVal.keys()]
+    countOfClustersTrainFilter = list(countOfClustersTrain.values())
+    countOfClustersValFilter = list(zip(*sorted(countOfClustersVal.items())))[1]
+            
     beta, gamma, delta, latentDims, lstmLayers, drop, lstmInfo = data["par"]
 
     trainMat = data["tl"]
@@ -72,8 +78,8 @@ def genFigure(filePath):
     ax[2].text(x=1300, y=0.50, s=f"Testing Accuracy: {'{:.3f}'.format(accV[len(accV) - 1])}")
     ax[2].label_outer()
 
-    ax[3].plot(list(range(0,len(distence)*10,10)),np.average(distence,axis=1,weights=countOfClusters), label="Train Distance")
-    ax[3].plot(list(range(0,len(distence_m)*10,10)),np.average(distence_m,axis=1,weights=countOfClusters), label="Valid Distance")
+    ax[3].plot(list(range(0,len(distence)*10,10)),np.average(distence,axis=1,weights=countOfClustersTrainFilter), label="Train Distance")
+    ax[3].plot(list(range(0,len(distence_m)*10,10)),np.average(distence_m,axis=1,weights=countOfClustersValFilter), label="Valid Distance")
     ax[3].legend(loc="center left", bbox_to_anchor=(1, 0.5))
     ax[3].set(xlabel="epoch",ylabel="Within Cluster Distance AVG")
     # ax[3].xticks(list(range(0,len(distence_m))))

@@ -60,12 +60,12 @@ class SequenceDataset:
         split2 = int(self.split[1]*nval)
         perm = torch.randperm(nval)
         if self.split[1] != 0:
-            train_seq , val_seq , train_label , val_atter = train_test_split(seqs,Dlables,test_size=self.split[1])
+            train_seq , val_seq , train_label , val_label = train_test_split(seqs,Dlables,test_size=self.split[1])
         else:
             train_seq = seqs
             val_seq = np.zeros_like(seqs)
             train_label = Dlables
-            val_atter = np.zeros_like(Dlables)
+            val_label = np.zeros_like(Dlables)
 
         print(nval, split1, split2)
         
@@ -76,10 +76,11 @@ class SequenceDataset:
 
         val_ds = TensorDataset(
             torch.from_numpy(val_seq),
-            torch.from_numpy(val_atter)
+            torch.from_numpy(val_label)
         )
 
-       
+        np.save('runs/trainLable.npy', train_label, allow_pickle=True)
+        np.save('runs/valLable.npy', val_label, allow_pickle=True)
         print(len(train_ds),len(val_ds))
         
         train_dl = DataLoader(
