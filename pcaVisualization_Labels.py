@@ -43,8 +43,8 @@ def pca_visualize_3D(principalComponents, principalDf, Labels, z):
     )
 
 
-    #fig.show()
-    fig.write_image("pca.png")
+    fig.show()
+    #fig.write_image("pca.png")
 
 
 def process_data(path_to_dataset):
