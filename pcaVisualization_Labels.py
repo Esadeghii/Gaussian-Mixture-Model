@@ -119,7 +119,7 @@ def conduct_visualizations(path_to_dataset: str, path_to_model):
 # conduct_visualizations('data-for-sampling/past-samples-with-info/samples-1642783730.685655/pca-merged-1642783735.882887.npz',
 #               'all-results/1-18-22-res/models/a19lds19b0.007g1.0d1.0h13.pt', (True, True, True))
 
-conduct_visualizations('data-for-sampling/processed-data-files/newtestLabeldData.npz', 
+conduct_visualizations('data-for-sampling/processed-data-files/processed-1710555155.767748.npz', 
 'models/a19lds19b0.007g0.02d0.1h13.pt')
 
 
