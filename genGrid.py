@@ -65,7 +65,7 @@ for params in list(ParameterGrid(paramDict)):   #gridsearch
     # trainer.train_model(batchSize, numEpochs, log=False)
 
     #train model, using weighted loss function
-    distence ,distence_m = trainer.train_model(batchSize, numEpochs, log=False, weightedLoss=weighted)
+    distence ,distence_m,correlation,correlation_valid = trainer.train_model(batchSize, numEpochs, log=False, weightedLoss=weighted)
 
     filename = "a" + str(params["latentDims"]) + "lds"+str(params["latentDims"])+"b"+str(params["beta"])+"g" +str(params["gamma"])+"d"+str(params["delta"])+"h"+str(params["hiddenSize"])
     #save the model
@@ -85,9 +85,9 @@ for params in list(ParameterGrid(paramDict)):   #gridsearch
     par = np.array([ params["beta"], params["gamma"], params["delta"], 
         params["latentDims"], params["lstmLayers"], params["dropout"], params["hiddenSize"]])
     if weighted:
-        np.savez("./runs/weighted/" + filename + ".npz", par=par, tl=tl, vl=vl, distence=distence,distence_m=distence_m)
+        np.savez("./runs/weighted/" + filename + ".npz", par=par, tl=tl, vl=vl, distence=distence,distence_m=distence_m,correlation=correlation,correlation_valid=correlation_valid)
     else:
-        np.savez("./runs/" + filename + ".npz", par=par, tl=tl, vl=vl, distence=distence,distence_m=distence_m)
+        np.savez("./runs/" + filename + ".npz", par=par, tl=tl, vl=vl, distence=distence,distence_m=distence_m,correlation=correlation,correlation_valid=correlation_valid)
 
     if weighted:
         genPlotForRun(runsPath="./runs/weighted/", run=filename + ".npz", graphsPath="./graphs/weighted", graph=filename + ".png")

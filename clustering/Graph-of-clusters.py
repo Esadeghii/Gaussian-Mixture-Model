@@ -10,7 +10,7 @@ GmmDData = pd.read_excel('data-and-cleaning/supercleanGMMFiltered-distances.xlsx
 GmmDataS = GmmData['Sequence'].to_list()
 
 
-def Distencecs(data_per_cluster0, data_per_cluster1):
+def MeanDistencecs(data_per_cluster0, data_per_cluster1):
     filterdDdata = np.zeros((len(data_per_cluster0),len(data_per_cluster1)))
     for idx,clmns in enumerate(data_per_cluster0):
         for jdx,rows in enumerate(data_per_cluster1):
@@ -27,7 +27,7 @@ for clusternum in set(GmmData['Label']):
 distance_clusters = np.zeros((len(data_per_cluster),len(data_per_cluster)))  
 for idx,clmns in enumerate(data_per_cluster):
     for jdx,rows in enumerate(data_per_cluster):
-        distance_clusters[idx][jdx] = Distencecs(clmns,rows) 
+        distance_clusters[idx][jdx] = MeanDistencecs(clmns,rows) 
 pd.DataFrame(distance_clusters).to_excel('clustering/distance_clusters.xlsx')
 
 

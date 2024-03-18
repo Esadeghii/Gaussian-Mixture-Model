@@ -39,9 +39,11 @@ def genFigure(filePath):
     #corelations with each dimention vs epoch
     distence = data["distence"]
     distence_m = data["distence_m"]
+    correlation = data["correlation"]
+    correlation_valid = data["correlation_valid"]
 
     #fig, ax = plt.subplots(3)
-    fig, ax = plt.subplots(4)
+    fig, ax = plt.subplots(5)
     fig.set_size_inches(8, 7)
 
     # fig2, ax2 = plt.subplots(math.ceil(len(distence[0])/3),3)
@@ -87,6 +89,14 @@ def genFigure(filePath):
     # ax[3].text(x=1300, y=0.62, s=f"Training Distance: {'{:.3f}'.format(accT[len(accT) - 1])}")
     # ax[3].text(x=1300, y=0.50, s=f"Testing Distance: {'{:.3f}'.format(accV[len(accV) - 1])}")
     ax[3].label_outer()
+    for clusters in range(len(correlation[0])):
+        ax[4].plot(list(range(0,len(correlation[:,clusters])*100,100)),correlation[:,clusters], label=f"Train correlation {clusters}")
+        ax[4].plot(list(range(0,len(correlation_valid[:,clusters])*100,100)),correlation_valid[:,clusters], label=f"Valid correlation {clusters}")
+    ax[4].legend(loc="center left", bbox_to_anchor=(1, 0.5))
+    ax[4].set(xlabel="epoch",ylabel="correlation")
+    ax[4].label_outer()
+
+
     plt.xticks(range(len(trainMat)))
     plt.gca().yaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
 

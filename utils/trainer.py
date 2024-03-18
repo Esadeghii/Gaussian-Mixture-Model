@@ -18,6 +18,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 GmmData = pd.read_excel('data-and-cleaning/supercleanGMMFilteredClusterd.xlsx')
 GmmDData = pd.read_excel('data-and-cleaning/supercleanGMMFiltered-distances.xlsx')
+print("Distances Data loaded")
 ALPHABET = ['A','C','G','T']
 GmmDataS = GmmData['Sequence'].to_list()
 clusternums = len(set(GmmData['Label'].to_list()))
@@ -26,6 +27,27 @@ enc.fit(np.array(ALPHABET).reshape(-1,1))
 # GmmDData = np.zeros((1963,1963))
 # GMMSums = sum(sum(GmmDData))#.to_numpy()))
 GMMSums = sum(sum(GmmDData.to_numpy()))
+
+def MeanDistencecs(data_per_cluster0, data_per_cluster1):
+    filterdDdata = np.zeros((len(data_per_cluster0),len(data_per_cluster1)))
+    for idx,clmns in enumerate(data_per_cluster0):
+        for jdx,rows in enumerate(data_per_cluster1):
+            if np.isnan(GmmDData[GmmDataS.index(clmns)][GmmDataS.index(rows)]):
+                raise ValueError('GmmDData is nan')
+            filterdDdata[idx][jdx] =  GmmDData[GmmDataS.index(clmns)][GmmDataS.index(rows)]
+
+    return np.mean(filterdDdata)
+data_per_cluster = []
+for clusternum in set(GmmData['Label']):
+    data_per_cluster.append(GmmData[GmmData['Label'] == clusternum]['Sequence'].tolist())
+
+distance_clusters = np.zeros((len(data_per_cluster),len(data_per_cluster)))  
+for idx,clmns in enumerate(data_per_cluster):
+    for jdx,rows in enumerate(data_per_cluster):
+        distance_clusters[idx][jdx] = MeanDistencecs(clmns,rows) 
+
+print("distance clusters Created")
+
 def Distencecs(sequence):
 
     basesequence = [''.join(enc.inverse_transform(e).reshape(-1).tolist()) for e in sequence] 
@@ -39,6 +61,17 @@ def Distencecs(sequence):
 
     return filterdDdata
 
+def MeanDistencecspairwise(data_per_cluster0, data_per_cluster1,GmmDData):
+    if data_per_cluster0 == [] or data_per_cluster1 == []:
+        return 0
+    filterdDdata = np.zeros((len(data_per_cluster0),len(data_per_cluster1)))
+    for idx,clmns in enumerate(data_per_cluster0):
+        for jdx,rows in enumerate(data_per_cluster1):
+            if np.isnan(GmmDData.detach().numpy()[clmns][rows]):
+                raise ValueError('GmmDData is nan')
+            filterdDdata[idx][jdx] =  GmmDData.detach().numpy()[clmns][rows]
+
+    return np.mean(filterdDdata)
 
 def rbf(inputs,delta):
     return torch.exp(- inputs ** 2 / (2. * delta ** 2))
@@ -78,6 +111,8 @@ def hellinger_distance(mu1, sigma1, mu2, sigma2):
 
 all_latent_code = [0]*clusternums
 all_latent_code_minus = [0]*clusternums
+clusters_distance_latent_train = []
+clusters_distance_latent_valid = []
 all_label_code = []
   
 class Trainer(ABC):
@@ -136,6 +171,9 @@ class Trainer(ABC):
 
         distence = []
         distence_mun = []
+
+        correlation = []
+        correlation_valid = []
         # train epochs
         for epoch_index in range(num_epochs):
             # update training scheduler
@@ -199,16 +237,37 @@ class Trainer(ABC):
             # all_label_code = []
             # save model
             #self.model.save()
+
             global all_latent_code
             global all_latent_code_minus
-            if epoch_index == 0:distence.append(all_latent_code)
-            if epoch_index == 0 :distence_mun.append(all_latent_code_minus)
+            global clusters_distance_latent_train
+            global clusters_distance_latent_valid
+            if epoch_index == 0:
+                distence.append(all_latent_code)
+                distence_mun.append(all_latent_code_minus)
+                correlation.append([abs(np.corrcoef(distance_clusters[:,i],
+                    np.array(clusters_distance_latent_train).mean(axis=0)[:,i])[0,1]) for i in range(len(distance_clusters))]
+                    )
+                correlation_valid.append([abs(np.corrcoef(distance_clusters[:,i],
+                    np.array(clusters_distance_latent_valid).mean(axis=0)[:,i])[0,1]) for i in range(len(distance_clusters))]
+                    )
 
-            if epoch_index % 10 == 9:distence.append(all_latent_code)
-            if epoch_index % 10 == 9 :distence_mun.append(all_latent_code_minus)
+            if epoch_index % 10 == 9:
+                distence.append(all_latent_code)
+                distence_mun.append(all_latent_code_minus)
+                correlation.append([abs(np.corrcoef(distance_clusters[:,i],
+                    np.array(clusters_distance_latent_train).mean(axis=0)[:,i])[0,1]) for i in range(len(distance_clusters))]
+                    )
+                correlation_valid.append([abs(np.corrcoef(distance_clusters[:,i],
+                    np.array(clusters_distance_latent_valid).mean(axis=0)[:,i])[0,1]) for i in range(len(distance_clusters))]
+                    )
+
             all_latent_code = [0]*clusternums
             all_latent_code_minus = [0]*clusternums
-        return distence,distence_mun
+            clusters_distance_latent_train = []
+            clusters_distance_latent_valid = []
+
+        return distence,distence_mun,correlation,correlation_valid
     def loss_and_acc_on_epoch(self, data_loader, epoch_num=None, train=True, weightedLoss=False, probBins=[]):
         """
         Computes the loss and accuracy for an epoch
@@ -542,14 +601,27 @@ class Trainer(ABC):
 
 
 
-
         global all_latent_code
         global all_latent_code_minus
+        global clusters_distance_latent_train
+        global clusters_distance_latent_valid
+
+        data_per_cluster_batch = []
         for labs in range(0,clusternums):
             seletedIndex = [idx for idx,i in enumerate(label.numpy().reshape(-1)) if i == labs]
+            data_per_cluster_batch.append(seletedIndex)
             labeldistsum.append(sum([sum(pairwise_distances[iddx].detach().numpy()) for iddx in seletedIndex]))
-        if train :all_latent_code = np.sum(np.array([list(all_latent_code), labeldistsum]), axis=0)
-        else:all_latent_code_minus = np.sum(np.array([list(all_latent_code_minus), labeldistsum]), axis=0)
+        
+        distance_clusters = np.zeros((len(data_per_cluster_batch),len(data_per_cluster_batch)))  
+        for idx,clmns in enumerate(data_per_cluster_batch):
+            for jdx,rows in enumerate(data_per_cluster_batch):
+                distance_clusters[idx][jdx] = MeanDistencecspairwise(clmns,rows,pairwise_distances)
+        if train :
+            all_latent_code = np.sum(np.array([list(all_latent_code), labeldistsum]), axis=0)
+            clusters_distance_latent_train.append(distance_clusters)
+        else:
+            all_latent_code_minus = np.sum(np.array([list(all_latent_code_minus), labeldistsum]), axis=0)
+            clusters_distance_latent_valid.append(distance_clusters)
 
         # compute attribute distance matrix
         attribute_dist_mat = Distencecs(sequence) #TODO: cs dist func between gmm
