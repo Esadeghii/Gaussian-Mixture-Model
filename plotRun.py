@@ -104,7 +104,7 @@ def genFigure(filePath):
 
 
     plt.xticks(range(len(trainMat)))
-    plt.gca().yaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
+    plt.gca().yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
 
     # clusterscolor=['R-FR','G', 'N', 'G-R', 'G-N', 'G-FR']
     # for di in range(len(distence[0])):
