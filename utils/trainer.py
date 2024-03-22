@@ -245,21 +245,21 @@ class Trainer(ABC):
             if epoch_index == 0:
                 distence.append(all_latent_code)
                 distence_mun.append(all_latent_code_minus)
-                correlation.append([abs(np.corrcoef(distance_clusters[:,i],
-                    np.array(clusters_distance_latent_train).mean(axis=0)[:,i])[0,1]) for i in range(len(distance_clusters))]
+                correlation.append(abs(np.corrcoef(distance_clusters.flatten(),
+                    np.array(clusters_distance_latent_train).mean(axis=0).flatten())[0,1]) 
                     )
-                correlation_valid.append([abs(np.corrcoef(distance_clusters[:,i],
-                    np.array(clusters_distance_latent_valid).mean(axis=0)[:,i])[0,1]) for i in range(len(distance_clusters))]
+                correlation_valid.append(abs(np.corrcoef(distance_clusters.flatten(),
+                    np.array(clusters_distance_latent_valid).mean(axis=0).flatten())[0,1])
                     )
 
-            if epoch_index % 10 == 9:
+            if epoch_index % 100 == 99:
                 distence.append(all_latent_code)
                 distence_mun.append(all_latent_code_minus)
-                correlation.append([abs(np.corrcoef(distance_clusters[:,i],
-                    np.array(clusters_distance_latent_train).mean(axis=0)[:,i])[0,1]) for i in range(len(distance_clusters))]
+                correlation.append(abs(np.corrcoef(distance_clusters.flatten(),
+                    np.array(clusters_distance_latent_train).mean(axis=0).flatten())[0,1]) 
                     )
-                correlation_valid.append([abs(np.corrcoef(distance_clusters[:,i],
-                    np.array(clusters_distance_latent_valid).mean(axis=0)[:,i])[0,1]) for i in range(len(distance_clusters))]
+                correlation_valid.append(abs(np.corrcoef(distance_clusters.flatten(),
+                    np.array(clusters_distance_latent_valid).mean(axis=0).flatten())[0,1])
                     )
 
             all_latent_code = [0]*clusternums

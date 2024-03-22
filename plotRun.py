@@ -89,15 +89,15 @@ def genFigure(filePath):
     # ax[3].text(x=1300, y=0.62, s=f"Training Distance: {'{:.3f}'.format(accT[len(accT) - 1])}")
     # ax[3].text(x=1300, y=0.50, s=f"Testing Distance: {'{:.3f}'.format(accV[len(accV) - 1])}")
     ax[3].label_outer()
-    for clusters in range(len(correlation[0])):
-        ax[4].plot(list(range(0,len(correlation[:,clusters])*100,100)),correlation[:,clusters], label=f"Train correlation {clusters}")
+    #for clusters in range(len(correlation[0])):
+    ax[4].plot(list(range(0,len(correlation)*100,100)),correlation, label=f"Train correlation")
         #ax[4].plot(list(range(0,len(correlation_valid[:,clusters])*100,100)),correlation_valid[:,clusters], label=f"Valid correlation {clusters}")
     ax[4].legend(loc="center left", bbox_to_anchor=(1, 0.5))
     ax[4].set(xlabel="epoch",ylabel="correlation")
     ax[4].label_outer()
 
-    for clusters in range(len(correlation[0])):
-        ax[5].plot(list(range(0,len(correlation_valid[:,clusters])*100,100)),correlation_valid[:,clusters], label=f"Valid correlation {clusters}")
+    #for clusters in range(len(correlation[0])):
+    ax[5].plot(list(range(0,len(correlation_valid)*100,100)),correlation_valid, label=f"Valid correlation")
     ax[5].legend(loc="center left", bbox_to_anchor=(1, 0.5))
     ax[5].set(xlabel="epoch",ylabel="Valid correlation")
     ax[5].label_outer()
