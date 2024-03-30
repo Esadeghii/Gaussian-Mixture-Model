@@ -109,8 +109,8 @@ def hellinger_distance(mu1, sigma1, mu2, sigma2):
     return squared_hellinger
 
 
-all_latent_code = [0]*clusternums
-all_latent_code_minus = [0]*clusternums
+all_label_dis_sum_train = [0]*clusternums
+all_label_dis_sum_val = [0]*clusternums
 clusters_distance_latent_train = []
 clusters_distance_latent_valid = []
 all_label_code = []
@@ -223,47 +223,54 @@ class Trainer(ABC):
             
             # clusters_list = []
             # for cluster_label in set(GmmData['Label']):
-            #     global all_latent_code
+            #     global all_label_dis_sum_train
             #     global all_label_code
             #     if cluster_label == None:break
-            #     latent = torch.tensor([all_latent_code[i] for i in range(len(all_label_code)) if all_label_code[i] == cluster_label])
+            #     latent = torch.tensor([all_label_dis_sum_train[i] for i in range(len(all_label_code)) if all_label_code[i] == cluster_label])
             #     latent = latent.view(-1, 1).repeat(1, latent.shape[0])
             #     lc_dist_mat = (latent - latent.transpose(1, 0)).view(-1, 1)
 
             #     clusters_list.append(np.mean(lc_dist_mat.numpy()))
             # distence.append(tuple(clusters_list))
             # del clusters_list
-            # all_latent_code = []
+            # all_label_dis_sum_train = []
             # all_label_code = []
             # save model
             #self.model.save()
 
-            global all_latent_code
-            global all_latent_code_minus
+            global all_label_dis_sum_train
+            global all_label_dis_sum_val
             global clusters_distance_latent_train
             global clusters_distance_latent_valid
             if epoch_index == 0:
-                distence.append(all_latent_code)
-                distence_mun.append(all_latent_code_minus)
-                correlation.append(abs(np.corrcoef(distance_clusters.flatten(),
-                    np.array(clusters_distance_latent_train).mean(axis=0).flatten())[0,1]) 
-                    )
-                correlation_valid.append(abs(np.corrcoef(distance_clusters.flatten(),
-                    np.array(clusters_distance_latent_valid).mean(axis=0).flatten())[0,1])
-                    )
+                distence.append(all_label_dis_sum_train)
+                distence_mun.append(all_label_dis_sum_val)
 
-            if epoch_index % 100 == 99:
-                distence.append(all_latent_code)
-                distence_mun.append(all_latent_code_minus)
-                correlation.append(abs(np.corrcoef(distance_clusters.flatten(),
-                    np.array(clusters_distance_latent_train).mean(axis=0).flatten())[0,1]) 
-                    )
-                correlation_valid.append(abs(np.corrcoef(distance_clusters.flatten(),
-                    np.array(clusters_distance_latent_valid).mean(axis=0).flatten())[0,1])
-                    )
+                #compute and return correlation of upper triangles of the matrices
+                upper_distance_clusters= distance_clusters[np.triu_indices_from(distance_clusters, k=1)]
+                upper_distance_clusters_latent= np.array(clusters_distance_latent_train).mean(axis=0)[np.triu_indices_from(np.array(clusters_distance_latent_train).mean(axis=0), k=1)]
+                
+                upper_distance_clusters_latent_valid= np.array(clusters_distance_latent_valid).mean(axis=0)[np.triu_indices_from(np.array(clusters_distance_latent_valid).mean(axis=0), k=1)]
+                
+                correlation.append(abs(np.corrcoef(upper_distance_clusters,upper_distance_clustersdistance_clusters_latent)[0,1]))
 
-            all_latent_code = [0]*clusternums
-            all_latent_code_minus = [0]*clusternums
+                correlation_valid.append(abs(np.corrcoef(upper_distance_clusters, upper_distance_clusters_latent_valid)[0,1]))
+
+            if epoch_index % 10 == 9:
+                distence.append(all_label_dis_sum_train)
+                distence_mun.append(all_label_dis_sum_val)
+
+                upper_distance_clusters= distance_clusters[np.triu_indices_from(distance_clusters, k=1)]
+                upper_distance_clusters_latent= np.array(clusters_distance_latent_train).mean(axis=0)[np.triu_indices_from(np.array(clusters_distance_latent_train).mean(axis=0), k=1)]
+                
+                upper_distance_clusters_latent_valid= np.array(clusters_distance_latent_valid).mean(axis=0)[np.triu_indices_from(np.array(clusters_distance_latent_valid).mean(axis=0), k=1)]
+                
+                correlation.append(abs(np.corrcoef(upper_distance_clusters,upper_distance_clustersdistance_clusters_latent)[0,1]))
+
+                correlation_valid.append(abs(np.corrcoef(upper_distance_clusters, upper_distance_clusters_latent_valid)[0,1]))
+
+            all_label_dis_sum_train = [0]*clusternums
+            all_label_dis_sum_val = [0]*clusternums
             clusters_distance_latent_train = []
             clusters_distance_latent_valid = []
 
@@ -557,7 +564,7 @@ class Trainer(ABC):
             scalar, loss
         """
         # compute latent distance matrix
-        #all_latent_code.extend(torch.norm(latent_code.detach(),dim=1))
+        #all_label_dis_sum_train.extend(torch.norm(latent_code.detach(),dim=1))
         all_label_code.extend(label.numpy().reshape(-1))
 
         labeldistsum = []
@@ -601,8 +608,8 @@ class Trainer(ABC):
 
 
 
-        global all_latent_code
-        global all_latent_code_minus
+        global all_label_dis_sum_train
+        global all_label_dis_sum_val
         global clusters_distance_latent_train
         global clusters_distance_latent_valid
 
@@ -617,10 +624,10 @@ class Trainer(ABC):
             for jdx,rows in enumerate(data_per_cluster_batch):
                 distance_clusters[idx][jdx] = MeanDistencecspairwise(clmns,rows,pairwise_distances)
         if train :
-            all_latent_code = np.sum(np.array([list(all_latent_code), labeldistsum]), axis=0)
+            all_label_dis_sum_train = np.sum(np.array([list(all_label_dis_sum_train), labeldistsum]), axis=0)
             clusters_distance_latent_train.append(distance_clusters)
         else:
-            all_latent_code_minus = np.sum(np.array([list(all_latent_code_minus), labeldistsum]), axis=0)
+            all_label_dis_sum_val = np.sum(np.array([list(all_label_dis_sum_val), labeldistsum]), axis=0)
             clusters_distance_latent_valid.append(distance_clusters)
 
         # compute attribute distance matrix

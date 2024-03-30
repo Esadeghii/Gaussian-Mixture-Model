@@ -80,8 +80,8 @@ def genFigure(filePath):
     ax[2].text(x=1300, y=0.50, s=f"Testing Accuracy: {'{:.3f}'.format(accV[len(accV) - 1])}")
     ax[2].label_outer()
 
-    ax[3].plot(list(range(0,len(distence)*100,100)),np.average(distence,axis=1,weights=countOfClustersTrainFilter), label="Train Distance")
-    ax[3].plot(list(range(0,len(distence_m)*100,100)),np.average(distence_m,axis=1,weights=countOfClustersValFilter), label="Valid Distance")
+    ax[3].plot(list(range(0,len(distence)*10,10)),np.average(distence,axis=1,weights=countOfClustersTrainFilter), label="Train Distance")
+    ax[3].plot(list(range(0,len(distence_m)*10,10)),np.average(distence_m,axis=1,weights=countOfClustersValFilter), label="Valid Distance")
     ax[3].legend(loc="center left", bbox_to_anchor=(1, 0.5))
     ax[3].set(xlabel="epoch",ylabel="Within Cluster Distance AVG")
     # ax[3].xticks(list(range(0,len(distence_m))))
@@ -90,14 +90,14 @@ def genFigure(filePath):
     # ax[3].text(x=1300, y=0.50, s=f"Testing Distance: {'{:.3f}'.format(accV[len(accV) - 1])}")
     ax[3].label_outer()
     #for clusters in range(len(correlation[0])):
-    ax[4].plot(list(range(0,len(correlation)*100,100)),correlation, label=f"Train correlation")
+    ax[4].plot(list(range(0,len(correlation)*10,10)),correlation, label=f"Train correlation")
         #ax[4].plot(list(range(0,len(correlation_valid[:,clusters])*100,100)),correlation_valid[:,clusters], label=f"Valid correlation {clusters}")
     ax[4].legend(loc="center left", bbox_to_anchor=(1, 0.5))
     ax[4].set(xlabel="epoch",ylabel="correlation")
     ax[4].label_outer()
 
     #for clusters in range(len(correlation[0])):
-    ax[5].plot(list(range(0,len(correlation_valid)*100,100)),correlation_valid, label=f"Valid correlation")
+    ax[5].plot(list(range(0,len(correlation_valid)*10,10)),correlation_valid, label=f"Valid correlation")
     ax[5].legend(loc="center left", bbox_to_anchor=(1, 0.5))
     ax[5].set(xlabel="epoch",ylabel="Valid correlation")
     ax[5].label_outer()
@@ -133,7 +133,7 @@ def genFigure(filePath):
     fig.subplots_adjust(right=0.75)
     # fig2.subplots_adjust(right=0.75)
     # fig3.subplots_adjust(right=0.75)
-    plt.setp(ax, xticks=list(range(0,len(trainMat),100)), xticklabels=list(range(0,len(trainMat),100)))    
+    plt.setp(ax, xticks=list(range(0,len(trainMat),10)), xticklabels=list(range(0,len(trainMat),10)))    
     # plt.setp(ax2, xticks=list(range(0,len(distence_m))), xticklabels=list(np.array(list(range(0,len(distence_m))))*10))    
     # plt.setp(ax3, xticks=list(range(0,len(distence_m))), xticklabels=list(np.array(list(range(0,len(distence_m))))*10)) 
     # fig2.tight_layout()
