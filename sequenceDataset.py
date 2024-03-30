@@ -60,33 +60,33 @@ class SequenceDataset:
         split2 = int(self.split[1]*nval)
         perm = torch.randperm(nval)
         if self.split[1] != 0:
-            train_seq , val_seq , train_label , val_label = train_test_split(seqs,Dlables,test_size=self.split[1])
+            self.train_seq , self.val_seq , self.train_label , self.val_label = train_test_split(seqs,Dlables,test_size=self.split[1])
         else:
-            train_seq = seqs
-            val_seq = np.zeros_like(seqs)
-            train_label = Dlables
-            val_label = np.zeros_like(Dlables)
+            self.train_seq = seqs
+            self.val_seq = np.zeros_like(seqs)
+            self.train_label = Dlables
+            self.val_label = np.zeros_like(Dlables)
 
         print(nval, split1, split2)
         
         train_ds = TensorDataset(
-            torch.from_numpy(train_seq),
-            torch.from_numpy(train_label)
+            torch.from_numpy(self.train_seq),
+            torch.from_numpy(self.train_label)
         )
 
         val_ds = TensorDataset(
-            torch.from_numpy(val_seq),
-            torch.from_numpy(val_label)
+            torch.from_numpy(self.val_seq),
+            torch.from_numpy(self.val_label)
         )
 
-        np.save('runs/trainLable.npy', train_label, allow_pickle=True)
-        np.save('runs/valLable.npy', val_label, allow_pickle=True)
+        np.save('runs/trainLable.npy', self.train_label, allow_pickle=True)
+        np.save('runs/valLable.npy', self.val_label, allow_pickle=True)
         print(len(train_ds),len(val_ds))
         
         train_dl = DataLoader(
             train_ds,
             batch_size=batch_size,
-            sampler= dataSampler(train_label)
+            sampler= dataSampler(self.train_label)
             )
         
         val_dl = DataLoader(

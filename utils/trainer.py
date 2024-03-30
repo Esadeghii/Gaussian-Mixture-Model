@@ -37,19 +37,9 @@ def MeanDistencecs(data_per_cluster0, data_per_cluster1):
             filterdDdata[idx][jdx] =  GmmDData[GmmDataS.index(clmns)][GmmDataS.index(rows)]
 
     return np.mean(filterdDdata)
-data_per_cluster = []
-for clusternum in set(GmmData['Label']):
-    data_per_cluster.append(GmmData[GmmData['Label'] == clusternum]['Sequence'].tolist())
 
-distance_clusters = np.zeros((len(data_per_cluster),len(data_per_cluster)))  
-for idx,clmns in enumerate(data_per_cluster):
-    for jdx,rows in enumerate(data_per_cluster):
-        distance_clusters[idx][jdx] = MeanDistencecs(clmns,rows) 
-
-print("distance clusters Created")
 
 def Distencecs(sequence):
-
     basesequence = [''.join(enc.inverse_transform(e).reshape(-1).tolist()) for e in sequence] 
     filterdDdata = np.zeros((len(basesequence),len(basesequence)))
     for idx,clmns in enumerate(basesequence):
@@ -167,7 +157,34 @@ class Trainer(ABC):
         print('Num Train Batches: ', len(generator_train))
         print('Num Valid Batches: ', len(generator_val))
 
+        print('Uniqe Label Train: ', set(self.dataset.train_label.reshape(-1)))
+        print('Uniqe Label Valid: ', set(self.dataset.val_label.reshape(-1)))
 
+        data_per_cluster_train = []
+        data_per_cluster_val = []
+        traindata = [''.join(enc.inverse_transform(e).reshape(-1).tolist()) for e in self.dataset.train_seq]
+        GmmDatatrain = pd.DataFrame({'Sequence':traindata,'Label':self.dataset.train_label.reshape(-1)})
+        valdata = [''.join(enc.inverse_transform(e).reshape(-1).tolist()) for e in self.dataset.val_seq]
+        GmmDataval = pd.DataFrame({'Sequence':valdata,'Label':self.dataset.val_label.reshape(-1)})
+        
+        for clusternum in set(GmmData['Label']):
+            data_per_cluster_train.append(GmmDatatrain[GmmDatatrain['Label'] == clusternum]['Sequence'].tolist())
+
+        distance_clusters_train = np.zeros((len(data_per_cluster_train),len(data_per_cluster_train)))  
+        for idx,clmns in enumerate(data_per_cluster_train):
+            for jdx,rows in enumerate(data_per_cluster_train):
+                distance_clusters_train[idx][jdx] = MeanDistencecs(clmns,rows) 
+        print("train distance clusters Created")
+
+        for clusternum in set(GmmData['Label']):
+            data_per_cluster_val.append(GmmDataval[GmmDataval['Label'] == clusternum]['Sequence'].tolist())
+
+        distance_clusters_val = np.zeros((len(data_per_cluster_val),len(data_per_cluster_val)))  
+        for idx,clmns in enumerate(data_per_cluster_val):
+            for jdx,rows in enumerate(data_per_cluster_val):
+                distance_clusters_val[idx][jdx] = MeanDistencecs(clmns,rows) 
+
+        print("validation distance clusters Created")
 
         distence = []
         distence_mun = []
@@ -247,27 +264,28 @@ class Trainer(ABC):
                 distence_mun.append(all_label_dis_sum_val)
 
                 #compute and return correlation of upper triangles of the matrices
-                upper_distance_clusters= distance_clusters[np.triu_indices_from(distance_clusters, k=1)]
-                upper_distance_clusters_latent= np.array(clusters_distance_latent_train).mean(axis=0)[np.triu_indices_from(np.array(clusters_distance_latent_train).mean(axis=0), k=1)]
+                upper_distance_clusters_train= distance_clusters_train[np.triu_indices_from(distance_clusters_train, k=1)]
+                upper_distance_clusters_val= distance_clusters_val[np.triu_indices_from(distance_clusters_val, k=1)]
+
+                upper_distance_clusters_latent_train= np.array(clusters_distance_latent_train).mean(axis=0)[np.triu_indices_from(np.array(clusters_distance_latent_train).mean(axis=0), k=1)]
                 
                 upper_distance_clusters_latent_valid= np.array(clusters_distance_latent_valid).mean(axis=0)[np.triu_indices_from(np.array(clusters_distance_latent_valid).mean(axis=0), k=1)]
                 
-                correlation.append(abs(np.corrcoef(upper_distance_clusters,upper_distance_clustersdistance_clusters_latent)[0,1]))
+                correlation.append(abs(np.corrcoef(upper_distance_clusters_train,upper_distance_clusters_latent_train)[0,1]))
 
-                correlation_valid.append(abs(np.corrcoef(upper_distance_clusters, upper_distance_clusters_latent_valid)[0,1]))
+                correlation_valid.append(abs(np.corrcoef(upper_distance_clusters_val, upper_distance_clusters_latent_valid)[0,1]))
 
             if epoch_index % 10 == 9:
                 distence.append(all_label_dis_sum_train)
                 distence_mun.append(all_label_dis_sum_val)
 
-                upper_distance_clusters= distance_clusters[np.triu_indices_from(distance_clusters, k=1)]
-                upper_distance_clusters_latent= np.array(clusters_distance_latent_train).mean(axis=0)[np.triu_indices_from(np.array(clusters_distance_latent_train).mean(axis=0), k=1)]
+                upper_distance_clusters_latent_train= np.array(clusters_distance_latent_train).mean(axis=0)[np.triu_indices_from(np.array(clusters_distance_latent_train).mean(axis=0), k=1)]
                 
                 upper_distance_clusters_latent_valid= np.array(clusters_distance_latent_valid).mean(axis=0)[np.triu_indices_from(np.array(clusters_distance_latent_valid).mean(axis=0), k=1)]
                 
-                correlation.append(abs(np.corrcoef(upper_distance_clusters,upper_distance_clustersdistance_clusters_latent)[0,1]))
+                correlation.append(abs(np.corrcoef(upper_distance_clusters_train,upper_distance_clusters_latent_train)[0,1]))
 
-                correlation_valid.append(abs(np.corrcoef(upper_distance_clusters, upper_distance_clusters_latent_valid)[0,1]))
+                correlation_valid.append(abs(np.corrcoef(upper_distance_clusters_val, upper_distance_clusters_latent_valid)[0,1]))
 
             all_label_dis_sum_train = [0]*clusternums
             all_label_dis_sum_val = [0]*clusternums
