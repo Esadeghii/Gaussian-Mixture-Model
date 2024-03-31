@@ -27,6 +27,7 @@ enc.fit(np.array(ALPHABET).reshape(-1,1))
 # GmmDData = np.zeros((1963,1963))
 # GMMSums = sum(sum(GmmDData))#.to_numpy()))
 GMMSums = sum(sum(GmmDData.to_numpy()))
+scale = 10
 
 def MeanDistencecs(data_per_cluster0, data_per_cluster1):
     filterdDdata = np.zeros((len(data_per_cluster0),len(data_per_cluster1)))
@@ -275,7 +276,7 @@ class Trainer(ABC):
 
                 correlation_valid.append(abs(np.corrcoef(upper_distance_clusters_val, upper_distance_clusters_latent_valid)[0,1]))
 
-            if epoch_index % 10 == 9:
+            if epoch_index % scale == (scale-1):
                 distence.append(all_label_dis_sum_train)
                 distence_mun.append(all_label_dis_sum_val)
 

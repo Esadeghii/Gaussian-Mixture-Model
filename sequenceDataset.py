@@ -79,8 +79,7 @@ class SequenceDataset:
             torch.from_numpy(self.val_label)
         )
 
-        np.save('runs/trainLable.npy', self.train_label, allow_pickle=True)
-        np.save('runs/valLable.npy', self.val_label, allow_pickle=True)
+        
         print(len(train_ds),len(val_ds))
         
         train_dl = DataLoader(

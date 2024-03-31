@@ -31,17 +31,18 @@ def pca_visualize_3D(principalComponents, principalDf, Labels, z):
     """A 3D version of pca_visualize_wavelength(), where z provides a third dimension in the visualization of
     principal component analysis"""
 
-    
-    principalDf['Labels'] = Labels
+    clusterscolor={0:'R-FR',1:'G', 2:'N', 3:'G-R', 4:'G-N', 5:'G-FR'}
+    Labels_with_color = [clusterscolor[i] for i in Labels]
+    principalDf['Labels'] = Labels_with_color
     fig = px.scatter_3d(
         principalDf,
         x = 'PC1',
         y = 'PC2',
         z = z[:,0],
-        color = Labels,
-        # color_discrete_sequence=["green", "silver", "gray", "red", "yellow"],
+        color = [clusterscolor[i] for i in sorted(Labels)],
+        color_discrete_sequence=["#93220a","green", "yellow", "#7c930a", "#0a9367", "#93670a"],
     )
-
+    #Color to html Link : https://htmlcolorcodes.com/
 
     fig.show()
     #fig.write_image("pca.png")

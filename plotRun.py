@@ -11,8 +11,8 @@ import matplotlib.ticker as mtick
 #takes a file path and returns a matplot figure object
 def genFigure(filePath):
     data = np.load(filePath)
-    countOfClustersTrain = dict(pd.DataFrame({'Label':np.load('runs/trainLable.npy', allow_pickle=True).reshape(-1)})['Label'].value_counts().sort_index())
-    countOfClustersVal = dict(pd.DataFrame({'Label':np.load('runs/valLable.npy', allow_pickle=True).reshape(-1)})['Label'].value_counts().sort_index())
+    countOfClustersTrain = dict(pd.DataFrame({'Label':data['trainLabel'].reshape(-1)})['Label'].value_counts().sort_index())
+    countOfClustersVal = dict(pd.DataFrame({'Label':data['validLabel'].reshape(-1)})['Label'].value_counts().sort_index())
     _ =[countOfClustersVal.update({i:0}) for i in countOfClustersTrain.keys() if i not in countOfClustersVal.keys()]
     countOfClustersTrainFilter = list(countOfClustersTrain.values())
     countOfClustersValFilter = list(zip(*sorted(countOfClustersVal.items())))[1]
@@ -26,7 +26,7 @@ def genFigure(filePath):
     regLossT = trainMat[:,3]
     lossT = trainMat[:,4]
     accT = trainMat[:,5]
-
+    scale = 10
     #validation losses vs epoch
     validMat = data["vl"]
     epochsV = validMat[:,0]
@@ -80,8 +80,8 @@ def genFigure(filePath):
     ax[2].text(x=1300, y=0.50, s=f"Testing Accuracy: {'{:.3f}'.format(accV[len(accV) - 1])}")
     ax[2].label_outer()
 
-    ax[3].plot(list(range(0,len(distence)*100,100)),np.average(distence,axis=1,weights=countOfClustersTrainFilter), label="Train Distance")
-    ax[3].plot(list(range(0,len(distence_m)*100,100)),np.average(distence_m,axis=1,weights=countOfClustersValFilter), label="Valid Distance")
+    ax[3].plot(list(range(0,len(distence)*scale,scale)),np.average(distence/countOfClustersTrainFilter,axis=1,weights=countOfClustersTrainFilter), label="Train Distance")
+    ax[3].plot(list(range(0,len(distence_m)*scale,scale)),np.average(distence_m/countOfClustersValFilter,axis=1,weights=countOfClustersValFilter), label="Valid Distance")
     ax[3].legend(loc="center left", bbox_to_anchor=(1, 0.5))
     ax[3].set(xlabel="epoch",ylabel="Within Cluster Distance AVG")
     # ax[3].xticks(list(range(0,len(distence_m))))
@@ -90,14 +90,14 @@ def genFigure(filePath):
     # ax[3].text(x=1300, y=0.50, s=f"Testing Distance: {'{:.3f}'.format(accV[len(accV) - 1])}")
     ax[3].label_outer()
     #for clusters in range(len(correlation[0])):
-    ax[4].plot(list(range(0,len(correlation)*100,100)),correlation, label=f"Train correlation")
+    ax[4].plot(list(range(0,len(correlation)*scale,scale)),correlation, label=f"Train correlation")
         #ax[4].plot(list(range(0,len(correlation_valid[:,clusters])*100,100)),correlation_valid[:,clusters], label=f"Valid correlation {clusters}")
     ax[4].legend(loc="center left", bbox_to_anchor=(1, 0.5))
     ax[4].set(xlabel="epoch",ylabel="correlation")
     ax[4].label_outer()
 
     #for clusters in range(len(correlation[0])):
-    ax[5].plot(list(range(0,len(correlation_valid)*100,100)),correlation_valid, label=f"Valid correlation")
+    ax[5].plot(list(range(0,len(correlation_valid)*scale,scale)),correlation_valid, label=f"Valid correlation")
     ax[5].legend(loc="center left", bbox_to_anchor=(1, 0.5))
     ax[5].set(xlabel="epoch",ylabel="Valid correlation")
     ax[5].label_outer()

@@ -26,7 +26,7 @@ dropout =  [0]
 latentDims= [19]
 lstmLayers = [1]
 hiddenSize = [13] #features inside lstm
-trainTestSplit = (0.9, 0.1)
+trainTestSplit = (0.85, 0.15)
 weighted = False
 
 
@@ -85,9 +85,9 @@ for params in list(ParameterGrid(paramDict)):   #gridsearch
     par = np.array([ params["beta"], params["gamma"], params["delta"], 
         params["latentDims"], params["lstmLayers"], params["dropout"], params["hiddenSize"]])
     if weighted:
-        np.savez("./runs/weighted/" + filename + ".npz", par=par, tl=tl, vl=vl, distence=distence,distence_m=distence_m,correlation=correlation,correlation_valid=correlation_valid)
+        np.savez("./runs/weighted/" + filename + ".npz", par=par, tl=tl, vl=vl, distence=distence,distence_m=distence_m,correlation=correlation,correlation_valid=correlation_valid,trainLabel = data.train_label,validLabel = data.val_label)
     else:
-        np.savez("./runs/" + filename + ".npz", par=par, tl=tl, vl=vl, distence=distence,distence_m=distence_m,correlation=correlation,correlation_valid=correlation_valid)
+        np.savez("./runs/" + filename + ".npz", par=par, tl=tl, vl=vl, distence=distence,distence_m=distence_m,correlation=correlation,correlation_valid=correlation_valid,trainLabel = data.train_label,validLabel = data.val_label)
 
     if weighted:
         genPlotForRun(runsPath="./runs/weighted/", run=filename + ".npz", graphsPath="./graphs/weighted", graph=filename + ".png")
