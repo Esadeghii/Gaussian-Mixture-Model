@@ -245,7 +245,7 @@ def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_f
         f.truncate(0)
 
     with open(path_to_generated, 'r+') as f:
-        f.write("Sequence Generated,Value Generated,LII Generated,Sequence Encoded/Decoded,Value Encoded,Ratio\n")
+        f.write("Sequence Generated,Value Generated,Sequence Encoded/Decoded,Value Encoded,Ratio\n")
 
         decoded = decoded.detach().numpy()
         for i, line in enumerate(file_contents):
