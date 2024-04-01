@@ -1,7 +1,6 @@
 import pandas as pd
 def write_unique(path_to_sequences: str):
     sequences_dict = {}
-    pd.read_excel(path_to_sequences).to_csv(path_to_sequences[:-4]+'csv',index=False)
     with open(path_to_sequences[:-4]+'csv', 'r+') as f:
         f.readline()  # Omits the header row for the names of columns
         read_data = f.readlines()
@@ -20,14 +19,11 @@ def write_unique(path_to_sequences: str):
 
 def fill_training_data_dict(path_to_data: str):
     data_set_dict = {}
+    df = pd.read_excel(path_to_data).to_numpy()
 
-    with open(path_to_data, 'r+') as f:
-        f.readline()  # Omits the header row for the names of columns
-        read_data = f.readlines()
-        for line in read_data:
-            split = line.split(',')
-            seq = split[0]
-            data_set_dict[seq] = seq
+    
+    for seq in df[:,0]:
+        data_set_dict[seq] = seq
 
     return data_set_dict
 
