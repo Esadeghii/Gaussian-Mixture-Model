@@ -319,16 +319,16 @@ def post_processing(path_to_sequences, path_to_put_folder, z_samples, model):
     #process_data_file(merged_path, prepended_name="pca-merged-", path_to_put=path_to_put_folder)
     
 
+if __name__ == "main":
+    with open("sampling-parameters.json", 'r') as f:
+        try:
+            data = json.load(f)
+            sampling_params = data['Parameters']
+        except:
+            print("Cannot process parameter file, please make sure sampling-parameters.json is correctly configured.")
+            sys.exit(1)
+    process_data_file(sampling_params['Original Data Path'], prepended_name='clean-data-base')  # Use this to process the data you wish to use into .npz
 
-with open("sampling-parameters.json", 'r') as f:
-    try:
-        data = json.load(f)
-        sampling_params = data['Parameters']
-    except:
-        print("Cannot process parameter file, please make sure sampling-parameters.json is correctly configured.")
-        sys.exit(1)
-process_data_file(sampling_params['Original Data Path'], prepended_name='clean-data-base')  # Use this to process the data you wish to use into .npz
-
-path_to_data_npz = process_data_file(sampling_params['Original Data Path'], prepended_name="clean-data-base", return_path=True)
-sampling(path_to_data_npz, sampling_params['Model Path'], "./data-for-sampling/past-samples-with-info")
-os.remove(path_to_data_npz)
+    path_to_data_npz = process_data_file(sampling_params['Original Data Path'], prepended_name="clean-data-base", return_path=True)
+    sampling(path_to_data_npz, sampling_params['Model Path'], "./data-for-sampling/past-samples-with-info")
+    os.remove(path_to_data_npz)
