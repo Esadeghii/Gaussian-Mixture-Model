@@ -1,7 +1,7 @@
 import pandas as pd
 def write_unique(path_to_sequences: str):
     sequences_dict = {}
-    with open(path_to_sequences[:-4]+'csv', 'r+') as f:
+    with open(path_to_sequences, 'r+') as f:
         f.readline()  # Omits the header row for the names of columns
         read_data = f.readlines()
         for i, line in enumerate(read_data):
