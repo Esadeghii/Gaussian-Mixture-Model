@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import plotly.express as px
 from matplotlib import path
-import sampleSequences as seq
+from sampleSequences import unpack_and_load_data, encode_data
 
-df = pd.read_csv("data-for-sampling/past-samples-with-info/samples-1702884742.4237525-GREEN-DEC2023/detailed-sequences", index_col = 0)
+df = pd.read_csv("data-for-sampling/past-samples-with-info/samples-1711985076.2931993/detailed-sequences", index_col = 0)
 
 
 def Linechart(x, y1, y2, dimName):
@@ -87,13 +87,13 @@ def process_sequences_wavelength_lii(base_data_path: str):
 def write_clean_data(base_data_csv: str, processed_data_file: str, model: str, generated_file: str):
     """This function is used to write a csv file that has sequence, wavelength, lii, z-wavelength, z-lii information
     for a given model and dataset"""
-    processed_data_file, model = seq.unpack_and_load_data(processed_data_file, model)
+    processed_data_file, model = unpack_and_load_data(processed_data_file, model)
 
     wavelength_array = processed_data_file['Wavelen']
     local_ii_array = processed_data_file['LII']
     ohe_sequences_tensor = processed_data_file['ohe']
 
-    latent_dist = seq.encode_data(ohe_sequences_tensor, model)
+    latent_dist = encode_data(ohe_sequences_tensor, model)
 
     mean = latent_dist.mean.detach().numpy()
     mean = np.array(mean)
@@ -106,7 +106,7 @@ def write_clean_data(base_data_csv: str, processed_data_file: str, model: str, g
             f.write(f"{sequence_data[i]},{wavelength_data[i]},{lii_data[i]},{matrix[0]},{matrix[1]}\n")
 
 #write_clean_data('data-for-sampling/past-samples-with-info/samples-1702884742.4237525-GREEN-DEC2023/generated-sequences.csv', 'data-for-sampling/past-samples-with-info/samples-1702884742.4237525-GREEN-DEC2023/generated-sequences--1702884750.56106.npz', 'models/weighted/a0.007lds15b0.007g1d1h13.pt', 'reencoded-data-info-model-4.csv')
-write_clean_data('data-and-cleaning/cleandata.csv', 'data-for-sampling/processed-data-files/clean-data-base-1702887664.4233212.npz', 'models/weighted/a0.007lds15b0.007g1d1h13.pt', 'data-info-model-4.csv')
+write_clean_data('data-and-cleaning/supercleanGMMFilteredClusterd.xlsx', 'data-for-sampling/processed-data-files/clean-data-base-1711983115.9798691.npz', 'models/weighted/a20lds20b0.007g0.01d1h13.pt', 'data-info-model-4.csv')
 
 
 
