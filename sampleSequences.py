@@ -21,15 +21,14 @@ def process_data_file(path_to_dataset: str, sequence_length=10, prepended_name="
     data = sd.SequenceDataset(path_to_dataset, sequence_length)
     ohe_sequences = data.transform_sequences(data.dataset['Sequence'].apply(lambda x: pd.Series([c for c in x])).
                                              to_numpy())  #One hot encodings in the form ['A', 'C', 'G', 'T']
-    Wavelen = np.array(data.dataset['Wavelen'])
-    LII = np.array(data.dataset['LII'])
+    label = np.array(data.dataset['Label'])
 
     if path_to_put is not None:
         file_path = f"{path_to_put}/{prepended_name}-{time.time()}.npz"
     else:
         file_path = f"./data-for-sampling/processed-data-files/{prepended_name}-{time.time()}.npz"
 
-    np.savez(file_path, Wavelen=Wavelen, LII=LII,ohe=ohe_sequences)
+    np.savez(file_path, label=label, ohe=ohe_sequences)
     if return_path:
         return file_path
     
@@ -64,38 +63,27 @@ def calculate_covariance(mean_matrix: object):
 
 # NOTE: FOR FUTURE USE, ONE WOULD NEED TO BASE THIS CALCULATION UPON THE Z PROXY DIMENSIONS FOR WAVELENGTH
 # AND LOCAL INTEGRATED INTENSITY, HERE WE ARE COMPARING AGAINST THRESHOLDS FOR THE ACTUAL VALUES
-def calculate_lower_bound_vector(mean_matrix, wavelength_matrix, lii_matrix, wv_thresh, lii_thresh):
+def calculate_lower_bound_vector(mean_matrix, label_matrix, wv_thresh):
     """This is used to calculate the lower-bound vector for random sampling from the truncated
     normal distribution. It sets the 0th dimension and 1st dimensions of z space to certain values.
     The rest of the dimensions are the minimum values observed in the latent sample for the dimensions."""
-    wav_arr = np.array([])
+    label_arr = np.array([])
     for i, elem in enumerate(mean_matrix[:, 0]): # column of values of wavelength dim
-        if wavelength_matrix[i] > 800: # signifies all data points with near-IR wavelength criteria
-            wav_arr = np.append(wav_arr, elem)
-    wav_mean = np.mean(wav_arr)
-    wav_std = np.std(wav_arr) # Calculating mean and standard deviation for wavelength dimension for near-IR class
+        if label_matrix[i] == 2: # signifies all data points with near-IR wavelength criteria
+            label_arr = np.append(label_arr, elem)
+    label_mean = np.mean(label_arr)
+    label_std = np.std(label_arr) # Calculating mean and standard deviation for wavelength dimension for near-IR class
 
-    lii_arr = np.array([])
-    for j, elem in enumerate(mean_matrix[:,1]): # column of values of LII dim
-        if lii_matrix[j] > 1: # signifies all data points with near-IR LII criteria
-            lii_arr = np.append(lii_arr, elem)
-    lii_mean = np.mean(lii_arr)
-    #lii_mean= 0.5593862594203822 #NIR MEAN
-    lii_std = np.std(lii_arr) # Calculating mean and standard deviation for LII dimension for near-IR class
-    
 
     mean_matrix_dims = mean_matrix.shape
     lower_bound_vector = np.array([float('-inf') for i in range(mean_matrix_dims[1])])
 
     # Feel free to change these values for 0th and 1st dimensions of the latent space, respectively
-    lower_bound_vector[0] = wav_mean #+ wav_std
-    lower_bound_vector[1] = lii_mean #+ lii_std # TODO: Uncomment this if you want to constrain wavelength and LII proxy dimensions
+    lower_bound_vector[0] = label_mean #+ wav_std
+    
+    wv_filter = list(filter(lambda x: x >= np.percentile(label_matrix, wv_thresh), label_matrix))
 
-    wv_filter = list(filter(lambda x: x >= np.percentile(wavelength_matrix, wv_thresh), wavelength_matrix))
-    lii_filter = list(filter(lambda x: x >= np.percentile(lii_matrix, lii_thresh), lii_matrix))
-
-    wv_test = list(map(lambda x: x > np.percentile(wavelength_matrix, wv_thresh), wv_filter))
-    lii_test = list(map(lambda x: x > np.percentile(lii_matrix, lii_thresh), lii_filter))
+    wv_test = list(map(lambda x: x > np.percentile(label_matrix, wv_thresh), wv_filter))
 
     # lower_bound_vector[0] = np.percentile(wavelength_matrix, wv_thresh)
     # lower_bound_vector[1] = np.percentile(lii_matrix, lii_thresh)
@@ -154,14 +142,14 @@ def execute_truncated_sampling_r(mean_vector, covariance_matrix, lower_bound_vec
     return samples
 
 
-def calculate_z_sample(latent_dist, wavelength_matrix, lii_matrix):
+def calculate_z_sample(latent_dist, Label_matrix):
     """This is used to calculate the sample(s) z, the random sample from the latent distribution. This calculates the
     mean_vector, covariance_matrix, lower bound vector, calls R script and returns calculated z_sample."""
     mean_matrix = latent_dist.mean.detach().numpy()
     mean_vector = calculate_mean(mean_matrix)
     covariance_matrix = calculate_covariance(mean_matrix)
-    lower_bound_vector = calculate_lower_bound_vector(mean_matrix, wavelength_matrix, lii_matrix,
-    sampling_params['Wavelength Proxy Threshold'], sampling_params['LII Proxy Threshold'])
+    lower_bound_vector = calculate_lower_bound_vector(mean_matrix, Label_matrix,
+    sampling_params['Wavelength Proxy Threshold'])
     z_samples = execute_truncated_sampling_r(mean_vector, covariance_matrix, lower_bound_vector)
     z_samples = np.asarray(z_samples)
     return z_samples
@@ -236,8 +224,7 @@ def write_detailed_sequences(path_to_put_folder, path_to_sequences, z_wav, z_lii
 def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_file: str, model):
     data_file = np.load(path_to_data_file)
 
-    wavelength_array = data_file['Wavelen']
-    local_ii_array = data_file['LII']
+    label_array = data_file['label']
     ohe_sequences_tensor = data_file['ohe']
 
     latent_dist = encode_data(ohe_sequences_tensor, model)
@@ -245,7 +232,6 @@ def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_f
     mean_matrix = latent_dist.mean.detach().numpy()
 
     z_wav = mean_matrix[:,0]
-    z_lii = mean_matrix[:,1]
 
     random_sample, _, _ = SequenceModel.reparametrize(model, latent_dist)
 
@@ -267,7 +253,7 @@ def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_f
                 sequence_original = line.split(',')[0]
                 sequence_generated = convert_sample(decoded[i, :, :])
                 ratio = compare_sequences(sequence_original, sequence_generated)
-                f.write(f"{line[:line.rindex(newline)-1]},{sequence_generated},{z_wav[i]},{z_lii[i]},{ratio}\n")
+                f.write(f"{line[:line.rindex(newline)-1]},{sequence_generated},{z_wav[i]},{ratio}\n")
 
 
 def write_merged_dataset(path_to_base_dataset: str, path_to_generated_samples: str, path_to_put_folder: str):
@@ -296,13 +282,12 @@ def sampling(path_to_data_file: str, path_to_model: str, path_to_put: str) -> np
 
     data_file, model = unpack_and_load_data(path_to_data_file, path_to_model)
 
-    wavelength_array = data_file['Wavelen']
-    local_ii_array = data_file['LII']
+    label_array = data_file['label']
     ohe_sequences_tensor = data_file['ohe']
 
     latent_dist = encode_data(ohe_sequences_tensor, model)
 
-    z_samples = calculate_z_sample(latent_dist, wavelength_array, local_ii_array)
+    z_samples = calculate_z_sample(latent_dist, label_array)
 
     path_to_sequences = f"{path_to_put_folder}/generated-sequences"
     with open(path_to_sequences, 'a', newline='') as f:
