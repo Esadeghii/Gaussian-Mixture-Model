@@ -68,10 +68,13 @@ def calculate_lower_bound_vector(mean_matrix, wavelength_matrix, lii_matrix, wv_
     """This is used to calculate the lower-bound vector for random sampling from the truncated
     normal distribution. It sets the 0th dimension and 1st dimensions of z space to certain values.
     The rest of the dimensions are the minimum values observed in the latent sample for the dimensions."""
+    #lii_arr = np.array([])
     wav_arr = np.array([])
     for i, elem in enumerate(mean_matrix[:, 0]): # column of values of wavelength dim
-        if wavelength_matrix[i] > 800: # signifies all data points with near-IR wavelength criteria
+        if wavelength_matrix[i] < 590: # signifies all data points with near-IR wavelength criteria
             wav_arr = np.append(wav_arr, elem)
+            #if lii_matrix[i] > 1:
+            #lii_arr = np.append(lii_arr, mean_matrix[:, 1])
     wav_mean = np.mean(wav_arr)
     wav_std = np.std(wav_arr) # Calculating mean and standard deviation for wavelength dimension for near-IR class
 
@@ -80,15 +83,18 @@ def calculate_lower_bound_vector(mean_matrix, wavelength_matrix, lii_matrix, wv_
         if lii_matrix[j] > 1: # signifies all data points with near-IR LII criteria
             lii_arr = np.append(lii_arr, elem)
     lii_mean = np.mean(lii_arr)
-    #lii_mean= 0.5593862594203822 #NIR MEAN
+    #lii_mean= -1.170219803809 #green class
+    #lii_mean= 0.55938625942675159235668789808917 #NIR MEAN
     lii_std = np.std(lii_arr) # Calculating mean and standard deviation for LII dimension for near-IR class
     
 
     mean_matrix_dims = mean_matrix.shape
-    lower_bound_vector = np.array([float('-inf') for i in range(mean_matrix_dims[1])])
+    lower_bound_vector = np.array([float("-inf") for i in range(mean_matrix_dims[1])])
+    upper_bound_vector = np.array([float("inf") for i in range(mean_matrix_dims[1])])#vase green
 
     # Feel free to change these values for 0th and 1st dimensions of the latent space, respectively
-    lower_bound_vector[0] = wav_mean #+ wav_std
+    #lower_bound_vector[0] = wav_mean
+    upper_bound_vector[0] = wav_mean #+ wav_std(vase vaghti ke green class ro mikhaim bayad ino estefade konim)
     lower_bound_vector[1] = lii_mean #+ lii_std # TODO: Uncomment this if you want to constrain wavelength and LII proxy dimensions
 
     wv_filter = list(filter(lambda x: x >= np.percentile(wavelength_matrix, wv_thresh), wavelength_matrix))
@@ -98,12 +104,14 @@ def calculate_lower_bound_vector(mean_matrix, wavelength_matrix, lii_matrix, wv_
     lii_test = list(map(lambda x: x > np.percentile(lii_matrix, lii_thresh), lii_filter))
 
     # lower_bound_vector[0] = np.percentile(wavelength_matrix, wv_thresh)
-    # lower_bound_vector[1] = np.percentile(lii_matrix, lii_thresh)
+    #lower_bound_vector[1] = np.percentile(lii_matrix, lii_thresh)
 
-    return lower_bound_vector
+    return lower_bound_vector, upper_bound_vector #vase green
+    #return lower_bound_vector
 
 
-def execute_truncated_sampling_r(mean_vector, covariance_matrix, lower_bound_vector):
+def execute_truncated_sampling_r(mean_vector, covariance_matrix, lower_bound_vector,upper_bound_vector):#vase green
+#def execute_truncated_sampling_r(mean_vector, covariance_matrix, lower_bound_vector):
     """This function calls truncatedSampling.R to sample from the truncated normal distribution. Returns
     a numpy array with the resulting sampled vectors."""
     print('1')
@@ -111,10 +119,10 @@ def execute_truncated_sampling_r(mean_vector, covariance_matrix, lower_bound_vec
     if not sys.warnoptions:
         import warnings
         warnings.simplefilter("ignore")
-
-    os.environ['/usr/local/lib/R'] = sampling_params['Path to R'] # Note: this will differ based on install location and operating system
+   #os.environ['R_HOME'] =r'C:\Users\Tiba_Rayaneh\anaconda3\envs\rstudio\lib\R'# sampling_params['Path to R'] # Note: this will differ based on install location and operating system
+    os.environ['path'] =r'C:/Program Files/R/R-3.6.1/bin/x64'
     print('2')
-    
+
     import rpy2.robjects as robjects
     from rpy2.robjects import pandas2ri
 
@@ -130,6 +138,7 @@ def execute_truncated_sampling_r(mean_vector, covariance_matrix, lower_bound_vec
     mean = pd.DataFrame(mean_vector, dtype='string')
     covariance = pd.DataFrame(covariance_matrix, dtype='string')
     lower = pd.DataFrame(lower_bound_vector, dtype='string')
+    upper = pd.DataFrame(upper_bound_vector, dtype='string')#vase green
     print('4')
 
     # converting it into r object for passing into r function
@@ -137,14 +146,16 @@ def execute_truncated_sampling_r(mean_vector, covariance_matrix, lower_bound_vec
     r_mean = pandas2ri.py2rpy(mean)
     r_covariance = pandas2ri.py2rpy(covariance)
     r_lower = pandas2ri.py2rpy(lower)
-    
+    r_upper = pandas2ri.py2rpy(upper)#vase green
     print('5')
 
     # Invoking the R function and getting the result
-    samples = truncated_sampling_r(r_mean, r_covariance, r_lower, sampling_params["Number of Samples"])
+    samples = truncated_sampling_r(r_mean, r_covariance, r_lower,r_upper, sampling_params["Number of Samples"])#vase green
+    #samples = truncated_sampling_r(r_mean, r_covariance, r_lower,sampling_params["Number of Samples"])
+    #samples = truncated_sampling_r(r_mean, r_covariance, r_lower, sampling_params["Number of Samples"])
     print('6')
 
-    #print(samples)
+    print(samples)
     print('7')
 
     # Converting it back to a pandas dataframe.
@@ -153,18 +164,34 @@ def execute_truncated_sampling_r(mean_vector, covariance_matrix, lower_bound_vec
 
     return samples
 
-
+#vase green
 def calculate_z_sample(latent_dist, wavelength_matrix, lii_matrix):
     """This is used to calculate the sample(s) z, the random sample from the latent distribution. This calculates the
     mean_vector, covariance_matrix, lower bound vector, calls R script and returns calculated z_sample."""
     mean_matrix = latent_dist.mean.detach().numpy()
     mean_vector = calculate_mean(mean_matrix)
     covariance_matrix = calculate_covariance(mean_matrix)
-    lower_bound_vector = calculate_lower_bound_vector(mean_matrix, wavelength_matrix, lii_matrix,
+    lower_bound_vector, upper_bound_vector = calculate_lower_bound_vector(mean_matrix, wavelength_matrix, lii_matrix,
     sampling_params['Wavelength Proxy Threshold'], sampling_params['LII Proxy Threshold'])
-    z_samples = execute_truncated_sampling_r(mean_vector, covariance_matrix, lower_bound_vector)
+
+    z_samples = execute_truncated_sampling_r(mean_vector, covariance_matrix, lower_bound_vector, upper_bound_vector)
     z_samples = np.asarray(z_samples)
     return z_samples
+
+
+####uncomment this for NIR
+
+# def calculate_z_sample(latent_dist, wavelength_matrix, lii_matrix):
+#     """This is used to calculate the sample(s) z, the random sample from the latent distribution. This calculates the
+#     mean_vector, covariance_matrix, lower bound vector, calls R script and returns calculated z_sample."""
+#     mean_matrix = latent_dist.mean.detach().numpy()
+#     mean_vector = calculate_mean(mean_matrix)
+#     covariance_matrix = calculate_covariance(mean_matrix)
+#     lower_bound_vector = calculate_lower_bound_vector(mean_matrix, wavelength_matrix, lii_matrix,
+#     sampling_params['Wavelength Proxy Threshold'], sampling_params['LII Proxy Threshold'])
+#     z_samples = execute_truncated_sampling_r(mean_vector, covariance_matrix, lower_bound_vector)
+#     z_samples = np.asarray(z_samples)
+#     return z_samples
 
 
 def decode_data(z_sample, model):
@@ -335,13 +362,14 @@ def post_processing(path_to_sequences, path_to_put_folder, z_samples, model):
     
 
 
+
 with open("sampling-parameters.json", 'r') as f:
-    try:
-        data = json.load(f)
-        sampling_params = data['Parameters']
-    except:
-        print("Cannot process parameter file, please make sure sampling-parameters.json is correctly configured.")
-        sys.exit(1)
+    #try:
+    data = json.load(f)
+    sampling_params = data['Parameters']
+    #except:
+     #print("Cannot process parameter file, please make sure sampling-parameters.json is correctly configured.")
+        #ys.exit(1)
 process_data_file(sampling_params['Original Data Path'], prepended_name='clean-data-base')  # Use this to process the data you wish to use into .npz
 
 path_to_data_npz = process_data_file(sampling_params['Original Data Path'], prepended_name="clean-data-base", return_path=True)
