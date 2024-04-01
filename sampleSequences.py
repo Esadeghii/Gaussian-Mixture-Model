@@ -202,7 +202,7 @@ def compare_sequences(sequence_a, sequence_b):
     return eval(f"{num_match}/{length}")
 
 
-def write_detailed_sequences(path_to_put_folder, path_to_sequences, z_wav, z_lii):
+def write_detailed_sequences(path_to_put_folder, path_to_sequences, z_label):
     detailed_path = f"{path_to_put_folder}/detailed-sequences"
     with open(detailed_path, 'w') as f:
         with open(path_to_sequences, 'r') as original:
@@ -215,8 +215,8 @@ def write_detailed_sequences(path_to_put_folder, path_to_sequences, z_wav, z_lii
             file_contents = file_contents[1:]
 
             for i, line in enumerate(file_contents):
-                if i < np.shape(z_wav)[0]:
-                    f.write(f"{line[:line.rindex(newline)-1]},{z_wav[i]},{z_lii[i]}\n")
+                if i < np.shape(z_label)[0]:
+                    f.write(f"{line[:line.rindex(newline)-1]},{z_label[i]}\n")
 
     return detailed_path
 
@@ -231,7 +231,7 @@ def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_f
 
     mean_matrix = latent_dist.mean.detach().numpy()
 
-    z_wav = mean_matrix[:,0]
+    z_value = mean_matrix[:,0]
 
     random_sample, _, _ = SequenceModel.reparametrize(model, latent_dist)
 
@@ -245,15 +245,15 @@ def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_f
         f.truncate(0)
 
     with open(path_to_generated, 'r+') as f:
-        f.write("Sequence Generated,Wavelen Generated,LII Generated,Sequence Encoded/Decoded,Wavelen Encoded,LII Encoded,Ratio\n")
+        f.write("Sequence Generated,Value Generated,Ratio\n")
 
         decoded = decoded.detach().numpy()
         for i, line in enumerate(file_contents):
-            if i < np.shape(z_wav)[0]:
+            if i < np.shape(z_value)[0]:
                 sequence_original = line.split(',')[0]
                 sequence_generated = convert_sample(decoded[i, :, :])
                 ratio = compare_sequences(sequence_original, sequence_generated)
-                f.write(f"{line[:line.rindex(newline)-1]},{sequence_generated},{z_wav[i]},{ratio}\n")
+                f.write(f"{line[:line.rindex(newline)-1]},{sequence_generated},{z_value[i]},{ratio}\n")
 
 
 def write_merged_dataset(path_to_base_dataset: str, path_to_generated_samples: str, path_to_put_folder: str):
@@ -311,7 +311,7 @@ def post_processing(path_to_sequences, path_to_put_folder, z_samples, model):
     data_set_dict = filt.fill_training_data_dict(sampling_params["Original Data Path"])
     filt.remove_duplicate(data_set_dict, path_to_sequences)
 
-    detailed_data_path = write_detailed_sequences(path_to_put_folder, path_to_sequences, z_samples[:,0], z_samples[:,1])
+    detailed_data_path = write_detailed_sequences(path_to_put_folder, path_to_sequences, z_samples[:,0])
     generated_data_path = process_data_file(path_to_sequences, prepended_name="generated-sequences-", path_to_put=path_to_put_folder, return_path=True)
     write_encoded_sequence_wavelength_lii(detailed_data_path, generated_data_path, model)
 

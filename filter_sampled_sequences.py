@@ -11,7 +11,7 @@ def write_unique(path_to_sequences: str):
         f.truncate(0)
 
     with open(path_to_sequences, 'r+') as f:
-        f.write("Sequence,Wavelen,LII\n")
+        f.write("Sequence,Label\n")
         keys = sequences_dict.keys()
         for key in keys:
             f.write(key)
