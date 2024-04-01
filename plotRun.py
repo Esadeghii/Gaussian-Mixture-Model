@@ -26,7 +26,7 @@ def genFigure(filePath):
     regLossT = trainMat[:,3]
     lossT = trainMat[:,4]
     accT = trainMat[:,5]
-    scale = 10
+    scale = 100
     #validation losses vs epoch
     validMat = data["vl"]
     epochsV = validMat[:,0]
@@ -61,7 +61,7 @@ def genFigure(filePath):
     ax[0].plot(epochsT, lossT, label="Training Loss")
     ax[0].plot(epochsV, lossV, label="Valid Loss", ls="--")
     ax[0].legend(loc="center left", bbox_to_anchor=(1, 0.5))
-    ax[0].set(xlabel="epoch", ylabel="Training Loss")
+    ax[0].set(xlabel="epoch", ylabel="T Loss")
     ax[0].label_outer()
 
     ax[1].plot(epochsT, rLossV, label="r Loss")
@@ -69,7 +69,7 @@ def genFigure(filePath):
     ax[1].plot(epochsT, regLossV, label="reg Loss")
     ax[1].plot(epochsV, lossV, label="Valid Loss")
     ax[1].legend(loc="center left", bbox_to_anchor=(1, 0.5))
-    ax[1].set(xlabel="epoch", ylabel="Validation Loss")
+    ax[1].set(xlabel="epoch", ylabel="Val Loss")
     ax[1].label_outer()
 
     ax[2].plot(epochsT, accT, label="Train Accuracy")
@@ -83,7 +83,7 @@ def genFigure(filePath):
     ax[3].plot(list(range(0,len(distence)*scale,scale)),np.average(distence/countOfClustersTrainFilter,axis=1,weights=countOfClustersTrainFilter), label="Train Distance")
     ax[3].plot(list(range(0,len(distence_m)*scale,scale)),np.average(distence_m/countOfClustersValFilter,axis=1,weights=countOfClustersValFilter), label="Valid Distance")
     ax[3].legend(loc="center left", bbox_to_anchor=(1, 0.5))
-    ax[3].set(xlabel="epoch",ylabel="Within Cluster Distance AVG")
+    ax[3].set(xlabel="epoch",ylabel="WCD AVG")
     # ax[3].xticks(list(range(0,len(distence_m))))
     # ax[3].xticklabels(list(np.array(list(range(0,len(distence_m))))*10))
     # ax[3].text(x=1300, y=0.62, s=f"Training Distance: {'{:.3f}'.format(accT[len(accT) - 1])}")
@@ -93,13 +93,13 @@ def genFigure(filePath):
     ax[4].plot(list(range(0,len(correlation)*scale,scale)),correlation, label=f"Train correlation")
         #ax[4].plot(list(range(0,len(correlation_valid[:,clusters])*100,100)),correlation_valid[:,clusters], label=f"Valid correlation {clusters}")
     ax[4].legend(loc="center left", bbox_to_anchor=(1, 0.5))
-    ax[4].set(xlabel="epoch",ylabel="correlation")
+    ax[4].set(xlabel="epoch",ylabel="T Corr")
     ax[4].label_outer()
 
     #for clusters in range(len(correlation[0])):
     ax[5].plot(list(range(0,len(correlation_valid)*scale,scale)),correlation_valid, label=f"Valid correlation")
     ax[5].legend(loc="center left", bbox_to_anchor=(1, 0.5))
-    ax[5].set(xlabel="epoch",ylabel="Valid correlation")
+    ax[5].set(xlabel="epoch",ylabel="Val Corr")
     ax[5].label_outer()
 
 
