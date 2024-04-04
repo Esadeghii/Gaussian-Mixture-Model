@@ -40,7 +40,7 @@ def pca_visualize_3D(principalComponents, principalDf, Labels, z):
         y = 'PC2',
         z = z[:,0],
         color = [clusterscolor[i] for i in sorted(Labels)],
-        color_discrete_sequence=["#93220a","green", "yellow", "#7c930a", "#0a9367", "#93670a"],
+        color_discrete_sequence=["#93220a","green", "yellow", "red", "blue", "black"],
     )
     #Color to html Link : https://htmlcolorcodes.com/
 
@@ -121,7 +121,7 @@ def conduct_visualizations(path_to_dataset: str, path_to_model):
 #               'all-results/1-18-22-res/models/a19lds19b0.007g1.0d1.0h13.pt', (True, True, True))
 
 conduct_visualizations('data-for-sampling/processed-data-files/processed-1710555155.767748.npz', 
-'models/a19lds19b0.007g0.02d0.1h13.pt')
+'models/a19lds19b0.007g0.01d1h13.pt')
 
 
               
