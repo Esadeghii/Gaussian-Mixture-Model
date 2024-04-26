@@ -30,7 +30,7 @@ GMMSums = sum(sum(GmmDData.to_numpy()))
 scale = 10
 
 
-
+#read corresponding sequence and return the distance matrix
 def Distencecs(sequence):
     basesequence = [''.join(enc.inverse_transform(e).reshape(-1).tolist()) for e in sequence] 
     filterdDdata = np.zeros((len(basesequence),len(basesequence)))
@@ -111,7 +111,7 @@ class Trainer(ABC):
 
        
     
-        
+        # create distance matrix for validation data & train data
         distance_train = Distencecs(self.dataset.train_seq)
         distance_val = Distencecs(self.dataset.val_seq)
         print("validation distance clusters Created")
@@ -196,7 +196,7 @@ class Trainer(ABC):
                 clusters_distance_latent_train = np.array(clusters_distance_latent_train)
                 clusters_distance_latent_valid = np.array(clusters_distance_latent_valid)
 
-
+                #compute and return pairwise distance of the latent code (train)
                 pairwise_distances_train = np.zeros((clusters_distance_latent_train.shape[0], clusters_distance_latent_train.shape[0]),dtype=float)
         
 
@@ -211,7 +211,7 @@ class Trainer(ABC):
                         pairwise_distances_train[i][j] = distance
                         pairwise_distances_train[j][i] = distance
 
-                #compute and return correlation of upper triangles of the matrices
+                #compute and return pairwise distance of the latent code (valid)
                 pairwise_distances_Val = np.zeros((clusters_distance_latent_valid.shape[0], clusters_distance_latent_valid.shape[0]),dtype=float)
         
 
