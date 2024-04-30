@@ -204,12 +204,12 @@ class Trainer(ABC):
                 # Calculate pairwise Euclidean distances
                 for i in range(clusters_distance_latent_train.shape[0]):
                     for j in range(i+1, clusters_distance_latent_train.shape[0]):  # To avoid calculating distances twice (i to j and j to i)
-                        distance = np.linalg.norm(clusters_distance_latent_train[i] - clusters_distance_latent_train[j]) #latent code is the repramiterized latent distribution
+                        distance_train_latent = np.linalg.norm(clusters_distance_latent_train[i] - clusters_distance_latent_train[j]) #latent code is the repramiterized latent distribution
                         #distance = torch.linalg.norm(latent_code_mean[i] - latent_code_mean[j])
                         
                         
-                        pairwise_distances_train[i][j] = distance
-                        pairwise_distances_train[j][i] = distance
+                        pairwise_distances_train[i][j] = distance_train_latent
+                        pairwise_distances_train[j][i] = distance_train_latent
 
                 #compute and return pairwise distance of the latent code (valid)
                 pairwise_distances_Val = np.zeros((clusters_distance_latent_valid.shape[0], clusters_distance_latent_valid.shape[0]),dtype=float)
@@ -219,12 +219,12 @@ class Trainer(ABC):
                 # Calculate pairwise Euclidean distances
                 for i in range(clusters_distance_latent_valid.shape[0]):
                     for j in range(i+1, clusters_distance_latent_valid.shape[0]):  # To avoid calculating distances twice (i to j and j to i)
-                        distance = np.linalg.norm(clusters_distance_latent_valid[i] - clusters_distance_latent_valid[j]) #latent code is the repramiterized latent distribution
+                        distance_val_latent = np.linalg.norm(clusters_distance_latent_valid[i] - clusters_distance_latent_valid[j]) #latent code is the repramiterized latent distribution
                         #distance = torch.linalg.norm(latent_code_mean[i] - latent_code_mean[j])
                         
                         
-                        pairwise_distances_Val[i][j] = distance
-                        pairwise_distances_Val[j][i] = distance
+                        pairwise_distances_Val[i][j] = distance_val_latent
+                        pairwise_distances_Val[j][i] = distance_val_latent
 
                 #compute and return correlation of upper triangles of the matrices
                 upper_distance_train= distance_train[np.triu_indices_from(distance_train, k=1)]
