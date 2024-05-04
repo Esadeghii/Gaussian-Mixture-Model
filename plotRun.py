@@ -26,7 +26,7 @@ def genFigure(filePath):
     regLossT = trainMat[:,3]
     lossT = trainMat[:,4]
     accT = trainMat[:,5]
-    scale = 100
+    scale = 10
     #validation losses vs epoch
     validMat = data["vl"]
     epochsV = validMat[:,0]

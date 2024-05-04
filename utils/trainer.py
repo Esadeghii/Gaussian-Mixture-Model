@@ -27,7 +27,7 @@ enc.fit(np.array(ALPHABET).reshape(-1,1))
 # GmmDData = np.zeros((1963,1963))
 # GMMSums = sum(sum(GmmDData))#.to_numpy()))
 GMMSums = sum(sum(GmmDData.to_numpy()))
-scale = 10
+scale = 100
 
 
 #read corresponding sequence and return the distance matrix
