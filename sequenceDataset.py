@@ -63,7 +63,7 @@ class SequenceDataset:
         split2 = int(self.split[1]*nval)
         perm = torch.randperm(nval)
         if self.split[1] != 0:
-            self.train_seq , self.val_seq , self.train_label , self.val_label = train_test_split(seqs,Dlables,test_size=self.split[1])
+            self.train_seq , self.val_seq , self.train_label , self.val_label = train_test_split(seqs,Dlables,test_size=self.split[1],random_state=42)
         else:
             self.train_seq = seqs
             self.val_seq = np.zeros_like(seqs)
