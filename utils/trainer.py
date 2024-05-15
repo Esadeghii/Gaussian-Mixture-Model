@@ -109,11 +109,12 @@ class Trainer(ABC):
         print('Uniqe Label Train: ', set(self.dataset.train_label.reshape(-1)))
         print('Uniqe Label Valid: ', set(self.dataset.val_label.reshape(-1)))
 
-       
+        train_seq = np.array([itm[0].detach().numpy() for itm in generator_train.dataset])
+        val_seq = np.array([itm[0].detach().numpy() for itm in generator_val.dataset])
     
         # create distance matrix for validation data & train data
-        distance_train = Distencecs(self.dataset.train_seq)
-        distance_val = Distencecs(self.dataset.val_seq)
+        distance_train = Distencecs(train_seq)
+        distance_val = Distencecs(val_seq)
         print("validation distance clusters Created")
 
         distence = []
