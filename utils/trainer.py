@@ -542,16 +542,7 @@ class Trainer(ABC):
         pairwise_distances = torch.zeros((latent_code.shape[0], latent_code.shape[0]),dtype=float)
         
 
-        # # Calculate pairwise hellinger distances
-        # for i in range(latent_code.shape[0]):
-        #      for j in range(i+1, latent_code.shape[0]):  # To avoid calculating distances twice (i to j and j to i)
-        #         distance = hellinger_distance(latent_code_mean[i], latent_code_std[i], latent_code_mean[j], latent_code_std[j])
-        #         if math.isnan(distance):
-        #             distance = 0
-        #         pairwise_distances[i][j] = distance
-        #         pairwise_distances[j][i] = distance
         
-
 
 # Calculate pairwise Euclidean distances
         for i in range(latent_code.shape[0]):
@@ -562,18 +553,7 @@ class Trainer(ABC):
                 
                 pairwise_distances[i][j] = distance
                 pairwise_distances[j][i] = distance
-
-
-        # cos = nn.CosineSimilarity(dim=0)
-
-        # for i in range(latent_code.shape[0]):
-        #     for j in range(i + 1, latent_code.shape[0]):  # To avoid calculating distances twice
-        #         # Calculate cosine similarity
-        #         cosine_sim = cos(latent_code[i], latent_code[j])
-        #         # Convert similarity to distance
-        #         cosine_dist = 1 - cosine_sim
-        #         pairwise_distances[i][j] = cosine_dist
-        #         pairwise_distances[j][i] = cosine_dist       
+   
 
 
 
@@ -602,31 +582,13 @@ class Trainer(ABC):
 
 
         # compute regularization loss
-        loss_fn = torch.nn.L1Loss()
-        cos_sim = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
+        # loss_fn = torch.nn.L1Loss()
 
         lc_tanh = pairwise_distances
         attribute_sign = attribute_dist_mat *factor
-        sign_loss = loss_fn(lc_tanh, attribute_sign.float())
+        #sign_loss = loss_fn(lc_tanh, attribute_sign.float())
+        sign_loss = torch.corrcoef(torch.stack((lc_tanh.view(-1), attribute_sign.float().view(-1)),dim=0))[1,0]
 
-        # cosine_similarity = cos_sim(pairwise_distances, attribute_dist_mat * factor)
-
-        # # Since CosineSimilarity returns values between -1 (opposite direction) and 1 (same direction),
-        # # and we want a loss function where lower values are better, we can subtract from 1 to get Cosine Loss
-        # sign_loss = 1 - cosine_similarity.mean()
-
-        # #Preserving Scaled Distances
-        # pairwise_distances = torch.clamp(pairwise_distances, min=1e-8)
-        # ratios = attribute_dist_mat / pairwise_distances
-        # print("ratios:", ratios)
-        # mean_ratio = ratios.mean()
-        # print("mean_ratio:", mean_ratio)
-        # adjusted_ratios = ratios - mean_ratio
-        # print("adjusted_ratios:", adjusted_ratios)
-        # squared_differences = adjusted_ratios ** 2
-        # print("squared_differences:", squared_differences)
-        # sign_loss = squared_differences.mean()
-        # print("sign_loss:", sign_loss)
         if torch.isnan(sign_loss):
             raise ValueError('sign_loss is nan')  
         
