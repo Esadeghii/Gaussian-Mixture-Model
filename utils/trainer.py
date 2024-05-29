@@ -587,7 +587,8 @@ class Trainer(ABC):
         lc_tanh = pairwise_distances
         attribute_sign = attribute_dist_mat *factor
         #sign_loss = loss_fn(lc_tanh, attribute_sign.float())
-        sign_loss = torch.corrcoef(torch.stack((lc_tanh.view(-1), attribute_sign.float().view(-1)),dim=0))[1,0]
+        sign_loss = 1 - (torch.corrcoef(torch.stack((lc_tanh.view(-1), attribute_sign.float().view(-1)),dim=0))[1,0])
+
 
         if torch.isnan(sign_loss):
             raise ValueError('sign_loss is nan')  
