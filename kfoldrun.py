@@ -9,7 +9,6 @@ import numpy as np
 import torch
 import pandas as pd
 from sklearn.model_selection import ParameterGrid
-
 from sequenceModel import SequenceModel
 from sequenceTrainer import SequenceTrainer
 from kfoldDataset import KFoldDataset
@@ -19,18 +18,17 @@ from kfoldPlotter import Plotter
 os.environ["CUDA_VISIBLE_DEVICES"]=""
 
 batchSize = 32
-
-numEpochs = 2000
-alphas = [0.005, 0.01, 0.02]
-betas = [0.006, 0.007, 0.008]
+numEpochs = 10
+alphas = [0.005]#, 0.01, 0.02]
+betas = [0.006]#, 0.007, 0.008]
 gammas = [1.0]
 deltas = [1.0]
 dropout =  [0]
-latentDims= [17,19]
+latentDims= [17]#,19]
 lstmLayers = [1]
-hiddenSize = [13,15]
-kfolds = 10
-weighted = True
+hiddenSize = [13]#,15]
+kfolds = 5
+weighted = False
 
 
 #Post processing of log data, avarages metrics for each epoch
@@ -46,6 +44,8 @@ def averageCols(logMat):
             rv[epoch, col] /= num
         rv[epoch,0] = epoch
     return rv
+
+
 
 paramDict = {"alpha":alphas,"beta": betas, "gamma": gammas, "delta": deltas,
      "latentDims": latentDims, "lstmLayers": lstmLayers, "dropout":dropout, "hiddenSize":hiddenSize}
@@ -72,7 +72,7 @@ for params in list(ParameterGrid(paramDict)):   #gridsearch
     
         #train model, use internal logging
         print("Training Model")
-        trainer.train_model(batchSize, numEpochs, log=False, weightedLoss=weighted)
+        distence ,distence_m,correlation,correlation_valid = trainer.train_model(batchSize, numEpochs, log=False, weightedLoss=weighted)
 
         filename = "a" + str(params["latentDims"]) + "lds"+str(params["latentDims"])+"b"+str(params["beta"])+"g" +str(params["gamma"])+"d"+str(params["delta"])+"h"+str(params["hiddenSize"]) + "fold" + str(i)
         unixTimestamp = str(int(time.time()))
@@ -90,19 +90,15 @@ for params in list(ParameterGrid(paramDict)):   #gridsearch
         #validation accuricies at each epoch
         vl = averageCols(trainer.validList)
 
-        print("Computing final correlations")
-        #Corellation on II at every 50 epochs, if it exists
-        wldims = trainer.WLCorList if trainer.IICorVsEpoch else np.zeros((0, model.emb_dim))
-        liidims = trainer.LIICorList if trainer.IICorVsEpoch else np.zeros((0, model.emb_dim))
-
+        
         print("Saving file")
         par = np.array([params["alpha"], params["beta"], params["gamma"], params["delta"], 
             params["latentDims"], params["lstmLayers"], params["dropout"], params["hiddenSize"]])
         
         if weighted:
-            np.savez("./runs/weighted/kfold/" + filename + ".npz", par=par, tl=tl, vl=vl, wldims=wldims, liidims=liidims)
+            np.savez("./runs/weighted/kfold/" + filename + ".npz", par=par, tl=tl, vl=vl,distence=distence,distence_m=distence_m,correlation=correlation,correlation_valid=correlation_valid,trainLabel = data.train_label,validLabel = data.val_label)
         else:
-            np.savez("./runs/kfold/" + filename + ".npz", par=par, tl=tl, vl=vl, wldims=wldims, liidims=liidims)
+            np.savez("./runs/kfold/" + filename + ".npz", par=par, tl=tl, vl=vl,  distence=distence,distence_m=distence_m,correlation=correlation,correlation_valid=correlation_valid,trainLabel = data.train_label,validLabel = data.val_label)
         runfiles.append(filename + ".npz")
         plotter.genFigure(filename + ".npz", filename + ".png")
     plotter.genAvgFigure(runfiles, "lds"+str(params["latentDims"])+"b"+str(params["beta"])+"g" +str(params["gamma"])+"d"+str(params["delta"])+"h"+str(params["hiddenSize"]) +"_avg" + ".png")

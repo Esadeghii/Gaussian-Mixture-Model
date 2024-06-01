@@ -16,7 +16,7 @@ class Plotter:
         for file in inputFiles:
             data.append(np.load(path.join(self.inputfolder, file)))
 
-        alpha, beta, gamma, delta, latentDims, lstmLayers, drop, lstmInfo = data[0]["par"]
+        beta, gamma, delta, latentDims, lstmLayers, drop, lstmInfo = data[0]["par"]
         
         rLossM = []
         kdLossM = []
@@ -30,6 +30,7 @@ class Plotter:
             regLossM = np.append(regLossM, trainMat[:,3])
             lossM = np.append(lossM, trainMat[:,4])
             accM = np.append(accM, trainMat[:,5])
+
 
         epochsT = data[0]["tl"][:,0]
         rLossT = np.mean(np.reshape(rLossM, (len(data), len(epochsT))), axis=0)
@@ -61,65 +62,46 @@ class Plotter:
         accV =  np.mean(np.reshape(accM, (len(data), len(epochsV))), axis=0)
         fvaccuray = accV[len(epochsV)-1]
 
-        #corelations with each dimention vs epoch
-        wldims = data[0]["wldims"]
-        lidims = data[0]["liidims"]
-        wldimsM = np.reshape(wldims, np.shape(wldims)+(1,))
-        lidimsM = np.reshape(wldims, np.shape(lidims)+(1,))
 
-        for datasub in data:
-            wldims = datasub["wldims"]
-            lidims = datasub["liidims"]
-            wldimsM = np.concatenate((wldimsM, np.reshape(wldims, np.shape(wldims)+(1,))), axis=2)
-            lidimsM = np.concatenate((lidimsM, np.reshape(lidims, np.shape(lidims)+(1,))), axis=2)
-
-        wldimCors = np.mean(wldimsM, axis=2) 
-        lidimCors = np.mean(lidimsM, axis=2) 
-        dimRange = [j * 50 for j in range(wldimCors.shape[0])]
-        finalWIIcor = wldimCors[:,0][len(wldimCors[:,0])-1]
-        finalLIIcor = wldimCors[:,1][len(wldimCors[:,1])-1]  
+         
 
         #fig, ax = plt.subplots(3)
-        fig, ax = plt.subplots(5)
-        fig.set_size_inches(8, 7)
-        fig.suptitle(r"$\alpha$=" + str(alpha) + r"$\beta$=" + str(beta) + r" $\gamma$=" + str(gamma) + r" $\delta$=" + str(delta) + " latentDims=" + str(latentDims) + " lstmLayers=" + str(lstmLayers) + " Dropout=" + str(drop) + " lstmInfo=" + str(lstmInfo), fontsize=12)
+        fig, ax = plt.subplots(6, figsize=(8, 15))
+        fig.suptitle(r" $\beta$=" + str(beta) + r" $\gamma$=" + str(gamma) + r" $\delta$=" + str(delta) + " latentDims=" + str(latentDims) + " lstmLayers=" + str(lstmLayers) + " Dropout=" + str(drop) + " lstmInfo=" + str(lstmInfo), fontsize=12)
 
-        ax[0].plot(epochsT, rLossT, label="r Loss")
-        ax[0].plot(epochsT, kdLossT, label="kld Loss")
-        ax[0].plot(epochsT, regLossT, label="reg Loss")
-        ax[0].plot(epochsT, lossT, label="Training Loss")
-        ax[0].plot(epochsV, lossV, label="Valid Loss", ls="--")
-        ax[0].legend(loc="center left", bbox_to_anchor=(1, 0.5))
-        ax[0].set(xlabel="epoch", ylabel="Training Loss")
-        ax[0].label_outer()
+        # Separate subplots for each loss
+        ax[0].plot(epochsT, rLossT, label="r Loss (Train)")
+        ax[0].plot(epochsV, rLossV, label="r Loss (Valid)", ls="--")
+        ax[0].set_ylabel("r Loss")
+        ax[0].legend(loc="upper right")
 
-        ax[1].plot(epochsT, rLossV, label="r Loss")
-        ax[1].plot(epochsT, kdLossV, label="kld Loss")
-        ax[1].plot(epochsT, regLossV, label="reg Loss")
-        ax[1].plot(epochsV, lossV, label="Valid Loss")
-        ax[1].legend(loc="center left", bbox_to_anchor=(1, 0.5))
-        ax[1].set(xlabel="epoch", ylabel="Validation Loss")
-        ax[1].label_outer()
+        ax[1].plot(epochsT, kdLossT, label="kld Loss (Train)")
+        ax[1].plot(epochsV, kdLossV, label="kld Loss (Valid)", ls="--")
+        ax[1].set_ylabel("kld Loss")
+        ax[1].legend(loc="upper right")
 
-        ax[2].plot(epochsT, accT, label="Train Accuracy")
-        ax[2].plot(epochsV, accV, label="Valid Accuracy")
-        ax[2].legend(loc="center left", bbox_to_anchor=(1, 0.5))
-        ax[2].set(xlabel="epoch",ylabel="Accuracy")
-        ax[2].label_outer()
-        ax[2].text(400, 0.5, "V accuracy="+ str(fvaccuray))
+        ax[2].plot(epochsT, regLossT, label="reg Loss (Train)")
+        ax[2].plot(epochsV, regLossV, label="reg Loss (Valid)", ls="--")
+        ax[2].set_ylabel("reg Loss")
+        ax[2].legend(loc="upper right")
 
-        for i in range(int(latentDims)):
-            ax[3].plot(dimRange, wldimCors[:,i], label=str(i), ls="-" if i == 0 else "--")
-            ax[4].plot(dimRange, lidimCors[:,i], label=str(i), ls="-" if i == 1 else "--")
-        ax[3].legend(loc="center left", bbox_to_anchor=(1, 0.5), ncol=2)
-        ax[3].set(xlabel="epoch",ylabel="WL Cor")
-        ax[3].label_outer()
-        ax[3].text(400, 0.2, "WL z0 corr="+ str(finalWIIcor))
+        ax[3].plot(epochsT, lossT, label="Training Loss")
+        ax[3].plot(epochsV, lossV, label="Validation Loss", ls="--")
+        ax[3].set_ylabel("Total Loss")
+        ax[3].legend(loc="upper right")
 
-        ax[4].legend(loc="center left", bbox_to_anchor=(1, 0.3), ncol=2)
-        ax[4].set(xlabel="epoch",ylabel="LII Cor")
-        ax[4].label_outer()
-        ax[4].text(400, 0.1, "LII z1 corr="+ str(finalLIIcor))
+        ax[4].plot(epochsT, accT, label="Training Accuracy")
+        ax[4].plot(epochsV, accV, label="Validation Accuracy", ls="--")
+        ax[4].set_ylabel("Accuracy")
+        ax[4].legend(loc="upper right")
+
+        # ax[5].plot(list(range(0, len(correlation)*100, 100)), correlation, label="Training Correlation")
+        # ax[5].plot(list(range(0, len(correlation_valid)*100, 100)), correlation_valid, label="Validation Correlation", ls="--")
+        # ax[5].set_ylabel("Correlation")
+        # ax[5].set_xlabel("Epoch")
+        # ax[5].legend(loc="upper right")
+
+
 
         fig.subplots_adjust(right=0.75)
         fig.savefig(path.join(self.outputfolder, outputFigure))
@@ -147,48 +129,49 @@ class Plotter:
         accV = validMat[:,5]
 
         #corelations with each dimention vs epoch
-        wldimCors = data["wldims"]
-        lidimCors = data["liidims"]
-        dimRange = [j * 50 for j in range(wldimCors.shape[0])]
+        correlation = data["correlation"]
+        correlation_valid = data["correlation_valid"]
+
 
         #fig, ax = plt.subplots(3)
-        fig, ax = plt.subplots(5)
-        fig.set_size_inches(8, 7)
+        fig, ax = plt.subplots(6, figsize=(8, 15))
+
         fig.suptitle(r"$\alpha$=" + str(alpha) + r"$\beta$=" + str(beta) + r" $\gamma$=" + str(gamma) + r" $\delta$=" + str(delta) + " latentDims=" + str(latentDims) + " lstmLayers=" + str(lstmLayers) + " Dropout=" + str(drop) + " lstmInfo=" + str(lstmInfo), fontsize=12)
 
-        ax[0].plot(epochsT, rLossT, label="r Loss")
-        ax[0].plot(epochsT, kdLossT, label="kld Loss")
-        ax[0].plot(epochsT, regLossT, label="reg Loss")
-        ax[0].plot(epochsT, lossT, label="Training Loss")
-        ax[0].plot(epochsV, lossV, label="Valid Loss", ls="--")
-        ax[0].legend(loc="center left", bbox_to_anchor=(1, 0.5))
-        ax[0].set(xlabel="epoch", ylabel="Training Loss")
-        ax[0].label_outer()
+        fig, ax = plt.subplots(6, figsize=(8, 15))
+        fig.suptitle(r" $\beta$=" + str(beta) + r" $\gamma$=" + str(gamma) + r" $\delta$=" + str(delta) + " latentDims=" + str(latentDims) + " lstmLayers=" + str(lstmLayers) + " Dropout=" + str(drop) + " lstmInfo=" + str(lstmInfo), fontsize=12)
 
-        ax[1].plot(epochsT, rLossV, label="r Loss")
-        ax[1].plot(epochsT, kdLossV, label="kld Loss")
-        ax[1].plot(epochsT, regLossV, label="reg Loss")
-        ax[1].plot(epochsV, lossV, label="Valid Loss")
-        ax[1].legend(loc="center left", bbox_to_anchor=(1, 0.5))
-        ax[1].set(xlabel="epoch", ylabel="Validation Loss")
-        ax[1].label_outer()
+        # Separate subplots for each loss
+        ax[0].plot(epochsT, rLossT, label="r Loss (Train)")
+        ax[0].plot(epochsV, rLossV, label="r Loss (Valid)", ls="--")
+        ax[0].set_ylabel("r Loss")
+        ax[0].legend(loc="upper right")
 
-        ax[2].plot(epochsT, accT, label="Train Accuracy")
-        ax[2].plot(epochsV, accV, label="Valid Accuracy")
-        ax[2].legend(loc="center left", bbox_to_anchor=(1, 0.5))
-        ax[2].set(xlabel="epoch",ylabel="Accuracy")
-        ax[2].label_outer()
+        ax[1].plot(epochsT, kdLossT, label="kld Loss (Train)")
+        ax[1].plot(epochsV, kdLossV, label="kld Loss (Valid)", ls="--")
+        ax[1].set_ylabel("kld Loss")
+        ax[1].legend(loc="upper right")
 
-        for i in range(int(latentDims)):
-            ax[3].plot(dimRange, wldimCors[:,i], label=str(i), ls="-" if i == 0 else "--")
-            ax[4].plot(dimRange, lidimCors[:,i], label=str(i), ls="-" if i == 1 else "--")
-        ax[3].legend(loc="center left", bbox_to_anchor=(1, 0.5), ncol=2)
-        ax[3].set(xlabel="epoch",ylabel="WL Cor")
-        ax[3].label_outer()
-        ax[4].legend(loc="center left", bbox_to_anchor=(1, 0.3), ncol=2)
-        ax[4].set(xlabel="epoch",ylabel="LII Cor")
-        ax[4].label_outer()
+        ax[2].plot(epochsT, regLossT, label="reg Loss (Train)")
+        ax[2].plot(epochsV, regLossV, label="reg Loss (Valid)", ls="--")
+        ax[2].set_ylabel("reg Loss")
+        ax[2].legend(loc="upper right")
 
+        ax[3].plot(epochsT, lossT, label="Training Loss")
+        ax[3].plot(epochsV, lossV, label="Validation Loss", ls="--")
+        ax[3].set_ylabel("Total Loss")
+        ax[3].legend(loc="upper right")
+
+        ax[4].plot(epochsT, accT, label="Training Accuracy")
+        ax[4].plot(epochsV, accV, label="Validation Accuracy", ls="--")
+        ax[4].set_ylabel("Accuracy")
+        ax[4].legend(loc="upper right")
+
+        ax[5].plot(list(range(0, len(correlation)*100, 100)), correlation, label="Training Correlation")
+        ax[5].plot(list(range(0, len(correlation_valid)*100, 100)), correlation_valid, label="Validation Correlation", ls="--")
+        ax[5].set_ylabel("Correlation")
+        ax[5].set_xlabel("Epoch")
+        ax[5].legend(loc="upper right")
         fig.subplots_adjust(right=0.75)
         fig.savefig(path.join(self.outputfolder, outputFigure))
         return fig

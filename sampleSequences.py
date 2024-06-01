@@ -9,7 +9,9 @@ import os
 import sys
 import json
 import filter_sampled_sequences as filt
+from rpy2.robjects import pandas2ri
 
+pandas2ri.activate()
 # import sys
 # sys.path.append('/Users/matthewkilleen/miniconda3/envs/kdd-sub/bin')
 
@@ -132,7 +134,7 @@ def execute_truncated_sampling_r(mean_vector, covariance_matrix, lower_bound_vec
     samples = truncated_sampling_r(r_mean, r_covariance, r_lower, sampling_params["Number of Samples"])
     print('6')
 
-    #print(samples)
+    print(samples)
     print('7')
 
     # Converting it back to a pandas dataframe.
@@ -319,7 +321,7 @@ def post_processing(path_to_sequences, path_to_put_folder, z_samples, model):
     #process_data_file(merged_path, prepended_name="pca-merged-", path_to_put=path_to_put_folder)
     
 
-if __name__ == "main":
+if __name__ == "__main__":
     with open("sampling-parameters.json", 'r') as f:
         try:
             data = json.load(f)
