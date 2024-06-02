@@ -4,7 +4,7 @@
         "Wavelength Proxy Threshold": 90,
         "LII Proxy Threshold": 90,
         "Original Data Path": "data-and-cleaning/supercleanGMMFilteredClusterd.xlsx",
-        "Model Path": "models/a19lds19b0.007g0.02d0.1h13.pt",
+        "Model Path": "models/a20lds20b0.007g1d1h10.pt",
         "Path to R": "/usr/bin/R"
     }
 }

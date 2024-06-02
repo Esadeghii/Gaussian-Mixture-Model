@@ -6,12 +6,12 @@ from sequenceModel import SequenceModel
 import sequenceDataset as sd
 import time
 import os
+from sklearn.decomposition import PCA
 import sys
 import json
 import filter_sampled_sequences as filt
 from rpy2.robjects import pandas2ri
 
-pandas2ri.activate()
 # import sys
 # sys.path.append('/Users/matthewkilleen/miniconda3/envs/kdd-sub/bin')
 
@@ -233,7 +233,9 @@ def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_f
 
     mean_matrix = latent_dist.mean.detach().numpy()
 
-    z_value = mean_matrix[:,0]
+    pca = PCA(n_components=1)  # Reduce to 3 dimensions
+    principalComponents = pca.fit_transform(mean_matrix)
+    z_value = principalComponents[:,0]
 
     random_sample, _, _ = SequenceModel.reparametrize(model, latent_dist)
 
