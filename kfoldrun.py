@@ -47,7 +47,7 @@ def averageCols(logMat):
 
 
 
-paramDict = {"alpha":alphas,"beta": betas, "gamma": gammas, "delta": deltas,
+paramDict = {"beta": betas, "gamma": gammas, "delta": deltas,
      "latentDims": latentDims, "lstmLayers": lstmLayers, "dropout":dropout, "hiddenSize":hiddenSize}
 for params in list(ParameterGrid(paramDict)):   #gridsearch
     #set up the model and trainer
@@ -66,7 +66,7 @@ for params in list(ParameterGrid(paramDict)):   #gridsearch
         if torch.cuda.is_available(): 
             print('cuda available')
             model.cuda()
-        trainer = SequenceTrainer(data, model, alpha=params["alpha"], beta=params["beta"], gamma=params["gamma"], delta=params["delta"], logTerms=True, IICorVsEpoch=True)
+        trainer = SequenceTrainer(data, model, beta=params["beta"], gamma=params["gamma"], delta=params["delta"], logTerms=True, IICorVsEpoch=True)
         if torch.cuda.is_available(): 
             trainer.cuda()
     
@@ -92,7 +92,7 @@ for params in list(ParameterGrid(paramDict)):   #gridsearch
 
         
         print("Saving file")
-        par = np.array([params["alpha"], params["beta"], params["gamma"], params["delta"], 
+        par = np.array([params["beta"], params["gamma"], params["delta"], 
             params["latentDims"], params["lstmLayers"], params["dropout"], params["hiddenSize"]])
         
         if weighted:

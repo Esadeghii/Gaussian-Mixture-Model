@@ -234,6 +234,7 @@ def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_f
     mean_matrix = latent_dist.mean.detach().numpy()
 
     z_value = mean_matrix[:,0]
+    #z_value = principalComponents[:, 0]
 
     random_sample, _, _ = SequenceModel.reparametrize(model, latent_dist)
 
