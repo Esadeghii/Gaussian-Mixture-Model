@@ -27,25 +27,41 @@ def process_data_file(path_to_dataset: str, sequence_length=10):
 
 
 # 3D plot of pc1, pc2, pc3
-def pca_visualize_3D(principalComponents, principalDf, Labels, z):
-    """A 3D version of pca_visualize_wavelength(), where z provides a third dimension in the visualization of
-    principal component analysis"""
+# def pca_visualize_3D(principalComponents, principalDf, Labels, z):
+#     """A 3D version of pca_visualize_wavelength(), where z provides a third dimension in the visualization of
+#     principal component analysis"""
 
-    clusterscolor={0:'R-FR',1:'G', 2:'N', 3:'G-R', 4:'G-N', 5:'G-FR'}
+#     clusterscolor={0:'R-FR',1:'G', 2:'N', 3:'G-R', 4:'G-N', 5:'G-FR'}
+#     Labels_with_color = [clusterscolor[i] for i in Labels]
+#     principalDf['Labels'] = Labels_with_color
+#     fig = px.scatter_3d(
+#         principalDf,
+#         x = 'PC1',
+#         y = 'PC2',
+#         z = z[:,0],
+#         color = [clusterscolor[i] for i in sorted(Labels)],
+#         color_discrete_sequence=["#93220a","green", "yellow", "red", "blue", "black"],
+#     )
+#     #Color to html Link : https://htmlcolorcodes.com/
+
+#     fig.show()
+#     #fig.write_image("pca.png")
+
+
+def pca_visualize_3D(principalComponents, principalDf, Labels):
+    clusterscolor = {0: 'R-FR', 1: 'G', 2: 'N', 3: 'G-R', 4: 'G-N', 5: 'G-FR'}
     Labels_with_color = [clusterscolor[i] for i in Labels]
     principalDf['Labels'] = Labels_with_color
     fig = px.scatter_3d(
         principalDf,
-        x = 'PC1',
-        y = 'PC2',
-        z = z[:,0],
-        color = [clusterscolor[i] for i in sorted(Labels)],
-        color_discrete_sequence=["#93220a","green", "yellow", "red", "blue", "black"],
+        x='PC1',
+        y='PC2',
+        z='PC3',  # Use the third principal component for the z-axis
+        color=Labels_with_color,
+        color_discrete_sequence=["#93220a", "green", "yellow", "red", "blue", "black"],
     )
-    #Color to html Link : https://htmlcolorcodes.com/
-
     fig.show()
-    #fig.write_image("pca.png")
+    # fig.write_image("pca.png")    
 
 
 def process_data(path_to_dataset):
@@ -114,14 +130,14 @@ def conduct_visualizations(path_to_dataset: str, path_to_model):
 
 
     
-    pca_visualize_3D(principalComponents, principalDf, Labels, z)
+    pca_visualize_3D(principalComponents, principalDf, Labels)#, z)
 
 
 # conduct_visualizations('data-for-sampling/past-samples-with-info/samples-1642783730.685655/pca-merged-1642783735.882887.npz',
 #               'all-results/1-18-22-res/models/a19lds19b0.007g1.0d1.0h13.pt', (True, True, True))
 
 conduct_visualizations('data-for-sampling/processed-data-files/processed-1710555155.767748.npz', 
-'models/a19lds19b0.007g0.01d1h13.pt')
+'models/a20lds20b0.007g1d1h10.pt')
 
 
               
