@@ -103,11 +103,13 @@ def preprocess_pca(z):
     # PCA
     pca = KernelPCA(n_components=4,kernel='rbf')
     principalComponents = pca.fit_transform(z)
+    explained_variance = np.var(principalComponents, axis=0)
+    explained_variance_ratio = explained_variance / np.sum(explained_variance)
     principalDf = pd.DataFrame(data=principalComponents, columns=['PC1', 'PC2', 'PC3', 'PC4'])
     # plt.scatter(principalComponents[:,0], principalComponents[:,1])
     labels = {
         str(i): f"PC {i + 1} ({var:.1f}%)"
-        for i, var in enumerate(pca.explained_variance_ratio_ * 100)
+        for i, var in enumerate(explained_variance_ratio * 100)
     }
     return principalComponents, principalDf, labels
 
