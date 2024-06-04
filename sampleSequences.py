@@ -206,7 +206,9 @@ def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_f
                 sequence_original = line.split(',')[0]
                 sequence_generated = convert_sample(decoded[i, :, :])
                 ratio = compare_sequences(sequence_original, sequence_generated)
-                f.write(f"{line[:line.rindex(newline)-1]},{'-'.join([str(lt)for lt in orginal_latent_dist.detach().numpy()[i]])},{p_desireds},{p_others},{sequence_generated},{z_value[i]},{'-'.join([str(lt)for lt in latent_dist.loc.detach().numpy()[i]])},{ratio}\n")
+                z_values = '-'.join([str(lt) for lt in orginal_latent_dist.detach().numpy()[i]])
+                zprime_values =  '-'.join([str(lt) for lt in latent_dist.loc.detach().numpy()[i]])
+                f.write(f"{line[:line.rindex(newline)-1]},{z_values},{p_desireds[i]},{p_others[i]},{sequence_generated},{z_value[i]},{zprime_values},{ratio}\n")
 
 
 def write_merged_dataset(path_to_base_dataset: str, path_to_generated_samples: str, path_to_put_folder: str):
