@@ -4,7 +4,7 @@ import sequenceDataset as sd
 import pandas as pd
 import numpy as np
 import torch
-from sklearn.decomposition import PCA
+from sklearn.decomposition import KernelPCA
 import matplotlib.pyplot as plt
 import plotly.express as px
 
@@ -101,7 +101,7 @@ def preprocess_pca(z):
     degress of freedom and labels"""
 
     # PCA
-    pca = PCA(n_components=4)
+    pca = KernelPCA(n_components=4,kernel='rbf')
     principalComponents = pca.fit_transform(z)
     principalDf = pd.DataFrame(data=principalComponents, columns=['PC1', 'PC2', 'PC3', 'PC4'])
     # plt.scatter(principalComponents[:,0], principalComponents[:,1])

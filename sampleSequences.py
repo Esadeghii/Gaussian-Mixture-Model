@@ -6,11 +6,11 @@ from sequenceModel import SequenceModel
 import sequenceDataset as sd
 import time
 import os
+import scipy.stats as stats
 from sklearn.decomposition import PCA
 import sys
 import json
 import filter_sampled_sequences as filt
-from rpy2.robjects import pandas2ri
 
 # import sys
 # sys.path.append('/Users/matthewkilleen/miniconda3/envs/kdd-sub/bin')
@@ -43,118 +43,67 @@ def encode_data(ohe_sequences: object, model: object):
     latent_dist = model.encode(ohe_sequences)
     return latent_dist
 
-
-def calculate_mean(mean_matrix: object):
-    """This is a wrapper function for calculating the mean of the mean_matrix that characterizes the
-    latent_distribution, which simply takes the mean of each dimension of the latent space using np.mean()."""
-    dimension_means = []
-    for i, col in enumerate(range(mean_matrix.shape[1])):
-        mean = np.mean(mean_matrix[:, i])
-        dimension_means.append(mean)
-    mean_vector = np.array(dimension_means)
-    return mean_vector
-
-
-def calculate_covariance(mean_matrix: object):
-    """This is a wrapper function for calculating the covariance matrix of the mean_matrix, which describes the variance
-    between latent dimensions. This simply uses the numpy.cov() function to do so and returns the covariance_matrix."""
-    mean_matrix_transpose = np.transpose(mean_matrix)
-    covariance_matrix = np.cov(mean_matrix_transpose)
-    return covariance_matrix
+def calcuting_cluster_means_and_cluster_stddevs(latent_dist: object, lables: object):
+    cluster_means, cluster_stddevs = [],[]
+    lables = torch.from_numpy(lables)
+    means = latent_dist.mean.detach().numpy()
+    stddev = latent_dist.stddev.detach().numpy()
+    for i in set(lables.detach().numpy()):
+        cluster_means.append(np.mean([idx[1] for idx in zip(lables.detach().numpy(),means) if idx[0] == i],axis=0))
+        cluster_stddevs.append(np.mean([idx[1] for idx in zip(lables.detach().numpy(),stddev) if idx[0] == i],axis=0))
+    return cluster_means, cluster_stddevs
 
 
-# NOTE: FOR FUTURE USE, ONE WOULD NEED TO BASE THIS CALCULATION UPON THE Z PROXY DIMENSIONS FOR WAVELENGTH
-# AND LOCAL INTEGRATED INTENSITY, HERE WE ARE COMPARING AGAINST THRESHOLDS FOR THE ACTUAL VALUES
-def calculate_lower_bound_vector(mean_matrix, label_matrix, wv_thresh):
-    """This is used to calculate the lower-bound vector for random sampling from the truncated
-    normal distribution. It sets the 0th dimension and 1st dimensions of z space to certain values.
-    The rest of the dimensions are the minimum values observed in the latent sample for the dimensions."""
-    label_arr = np.array([])
-    for i, elem in enumerate(mean_matrix[:, 0]): # column of values of wavelength dim
-        if label_matrix[i] == 2: # signifies all data points with near-IR wavelength criteria
-            label_arr = np.append(label_arr, elem)
-    label_mean = np.mean(label_arr)
-    label_std = np.std(label_arr) # Calculating mean and standard deviation for wavelength dimension for near-IR class
 
 
-    mean_matrix_dims = mean_matrix.shape
-    lower_bound_vector = np.array([float('-inf') for i in range(mean_matrix_dims[1])])
+def sample_from_vae_with_rejection(z_sample, cluster_means, cluster_stddevs, desired_label, num_samples=20, threshold=1.0):
+    """
+    Samples from the VAE's latent space such that the probability of the points 
+    being from the desired cluster is significantly higher than from other clusters.
 
-    # Feel free to change these values for 0th and 1st dimensions of the latent space, respectively
-    lower_bound_vector[0] = label_mean #+ wav_std
+    Parameters:
+    - vae_model: The trained VAE model.
+    - cluster_means: A list of mean vectors for each cluster in the latent space.
+    - cluster_stddevs: A list of standard deviation vectors for each cluster in the latent space.
+    - desired_label: The label of the desired cluster (0 to 5).
+    - num_samples: Number of samples to generate.
+    - threshold: The factor by which the probability for the desired cluster should exceed others.
+
+    Returns:
+    - accepted_samples: Generated samples from the desired cluster.
+    """
     
-    wv_filter = list(filter(lambda x: x >= np.percentile(label_matrix, wv_thresh), label_matrix))
+    Generated_sample = []
+    p_desireds = []
+    p_others = []
+    desired_mean = cluster_means[desired_label]
+    desired_stddev = cluster_stddevs[desired_label]
+    num_accepted_samples = 0
 
-    wv_test = list(map(lambda x: x > np.percentile(label_matrix, wv_thresh), wv_filter))
-
-    # lower_bound_vector[0] = np.percentile(wavelength_matrix, wv_thresh)
-    # lower_bound_vector[1] = np.percentile(lii_matrix, lii_thresh)
-
-    return lower_bound_vector
-
-
-def execute_truncated_sampling_r(mean_vector, covariance_matrix, lower_bound_vector):
-    """This function calls truncatedSampling.R to sample from the truncated normal distribution. Returns
-    a numpy array with the resulting sampled vectors."""
-    print('1')
-
-    if not sys.warnoptions:
-        import warnings
-        warnings.simplefilter("ignore")
-
-    os.environ['/usr/local/lib/R'] = sampling_params['Path to R'] # Note: this will differ based on install location and operating system
-    print('2')
-    
-    import rpy2.robjects as robjects
-    from rpy2.robjects import pandas2ri
-
-    # Defining the R script and loading the instance in Python
-    r = robjects.r
-    print('3')
-
-    r['source']('truncatedSampling.R')
-    # Loading the function we have defined in R.
-    truncated_sampling_r = robjects.globalenv['truncated_sampling']
-
-    # Reading and processing data
-    mean = pd.DataFrame(mean_vector, dtype='string')
-    covariance = pd.DataFrame(covariance_matrix, dtype='string')
-    lower = pd.DataFrame(lower_bound_vector, dtype='string')
-    print('4')
-
-    # converting it into r object for passing into r function
-    pandas2ri.activate()
-    r_mean = pandas2ri.py2rpy(mean)
-    r_covariance = pandas2ri.py2rpy(covariance)
-    r_lower = pandas2ri.py2rpy(lower)
-    
-    print('5')
-
-    # Invoking the R function and getting the result
-    samples = truncated_sampling_r(r_mean, r_covariance, r_lower, sampling_params["Number of Samples"])
-    print('6')
-
-    print(samples)
-    print('7')
-
-    # Converting it back to a pandas dataframe.
-    samples = pandas2ri.rpy2py(samples)
-    print('8')
-
-    return samples
-
-
-def calculate_z_sample(latent_dist, Label_matrix):
-    """This is used to calculate the sample(s) z, the random sample from the latent distribution. This calculates the
-    mean_vector, covariance_matrix, lower bound vector, calls R script and returns calculated z_sample."""
-    mean_matrix = latent_dist.mean.detach().numpy()
-    mean_vector = calculate_mean(mean_matrix)
-    covariance_matrix = calculate_covariance(mean_matrix)
-    lower_bound_vector = calculate_lower_bound_vector(mean_matrix, Label_matrix,
-    sampling_params['Wavelength Proxy Threshold'])
-    z_samples = execute_truncated_sampling_r(mean_vector, covariance_matrix, lower_bound_vector)
-    z_samples = np.asarray(z_samples)
-    return z_samples
+    while num_accepted_samples < num_samples:
+        z_sample = np.random.normal(desired_mean, desired_stddev)
+        # Compute the probability density for the desired cluster
+        p_desired = stats.multivariate_normal.pdf(z_sample, mean=desired_mean, cov=np.diag(desired_stddev**2))
+        
+        # Compute the maximum probability density for all other clusters
+        max_p_others = 0
+        for i in range(len(cluster_means)):
+            if i != desired_label:
+                mean = cluster_means[i]
+                stddev = cluster_stddevs[i]
+                p_other = stats.multivariate_normal.pdf(z_sample, mean=mean, cov=np.diag(stddev**2))
+                if np.average(p_other) > np.average(max_p_others): # p_other not a number is array
+                    max_p_others = p_other
+        
+        # Accept the sample if the desired probability is significantly higher
+        if np.average(p_desired) > threshold * np.average(max_p_others):
+            z_sample_tensor = torch.tensor(z_sample, dtype=torch.float32).unsqueeze(0)
+            Generated_sample.append(z_sample_tensor)
+            p_desireds.append(np.average(p_desired))
+            p_others.append(np.average(max_p_others))
+            num_accepted_samples += 1
+            print(f'{num_accepted_samples} are generate',end='\r')
+    return torch.cat(Generated_sample),p_desireds,p_others
 
 
 def decode_data(z_sample, model):
@@ -223,14 +172,14 @@ def write_detailed_sequences(path_to_put_folder, path_to_sequences, z_label):
     return detailed_path
 
 
-def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_file: str, model):
+def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_file: str,orginal_latent_dist, model,p_desireds,p_others):
     data_file = np.load(path_to_data_file)
 
     label_array = data_file['label']
     ohe_sequences_tensor = data_file['ohe']
 
     latent_dist = encode_data(ohe_sequences_tensor, model)
-
+    calcuting_cluster_means_and_cluster_stddevs(latent_dist,lables=label_array)
     mean_matrix = latent_dist.mean.detach().numpy()
 
     pca = PCA(n_components=1)  # Reduce to 3 dimensions
@@ -249,7 +198,7 @@ def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_f
         f.truncate(0)
 
     with open(path_to_generated, 'r+') as f:
-        f.write("Sequence Generated,Value Generated,Sequence Encoded/Decoded,Value Encoded,Ratio\n")
+        f.write("Sequence Generated,Value Generated,z-values,p_desireds,p_others,Sequence Encoded/Decoded,Value Encoded,z'values,Ratio\n")
 
         decoded = decoded.detach().numpy()
         for i, line in enumerate(file_contents):
@@ -257,7 +206,7 @@ def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_f
                 sequence_original = line.split(',')[0]
                 sequence_generated = convert_sample(decoded[i, :, :])
                 ratio = compare_sequences(sequence_original, sequence_generated)
-                f.write(f"{line[:line.rindex(newline)-1]},{sequence_generated},{z_value[i]},{ratio}\n")
+                f.write(f"{line[:line.rindex(newline)-1]},{'-'.join([str(lt)for lt in orginal_latent_dist.detach().numpy()[i]])},{p_desireds},{p_others},{sequence_generated},{z_value[i]},{'-'.join([str(lt)for lt in latent_dist.loc.detach().numpy()[i]])},{ratio}\n")
 
 
 def write_merged_dataset(path_to_base_dataset: str, path_to_generated_samples: str, path_to_put_folder: str):
@@ -291,7 +240,9 @@ def sampling(path_to_data_file: str, path_to_model: str, path_to_put: str) -> np
 
     latent_dist = encode_data(ohe_sequences_tensor, model)
 
-    z_samples = calculate_z_sample(latent_dist, label_array)
+    cluster_means, cluster_stddevs = calcuting_cluster_means_and_cluster_stddevs(latent_dist,label_array)
+
+    z_samples,p_desireds,p_others = sample_from_vae_with_rejection(latent_dist, cluster_means, cluster_stddevs, 2, num_samples=20, threshold=1.0)
 
     path_to_sequences = f"{path_to_put_folder}/generated-sequences"
     with open(path_to_sequences, 'a', newline='') as f:
@@ -304,10 +255,10 @@ def sampling(path_to_data_file: str, path_to_model: str, path_to_put: str) -> np
             decoded_sample = np.reshape(decoded_sample, (decoded_sample.shape[1], decoded_sample.shape[2]))
             convert_and_write_sample(decoded_sample, f)
 
-    post_processing(path_to_sequences, path_to_put_folder, z_samples, model)
+    post_processing(path_to_sequences, path_to_put_folder, z_samples, model,p_desireds,p_others)
 
 
-def post_processing(path_to_sequences, path_to_put_folder, z_samples, model):
+def post_processing(path_to_sequences, path_to_put_folder, z_samples, model,p_desireds,p_others):
     """This is a function that deals with all of the post processing needed in order to filter out repeated sequences that 
     were generated, create annotated files that list out important values in z space and create .npz files necessary to use
     PCA later on"""
@@ -317,7 +268,7 @@ def post_processing(path_to_sequences, path_to_put_folder, z_samples, model):
 
     detailed_data_path = write_detailed_sequences(path_to_put_folder, path_to_sequences, z_samples[:,0])
     generated_data_path = process_data_file(path_to_sequences, prepended_name="generated-sequences-", path_to_put=path_to_put_folder, return_path=True)
-    write_encoded_sequence_wavelength_lii(detailed_data_path, generated_data_path, model)
+    write_encoded_sequence_wavelength_lii(detailed_data_path, generated_data_path,z_samples, model,p_desireds,p_others)
 
     #merged_path = write_merged_dataset("cleandata.csv", path_to_sequences, path_to_put_folder)
     #process_data_file(merged_path, prepended_name="pca-merged-", path_to_put=path_to_put_folder)

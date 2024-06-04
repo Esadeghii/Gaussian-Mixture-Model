@@ -243,6 +243,9 @@ class Trainer(ABC):
             clusters_distance_latent_train = []
             clusters_distance_latent_valid = []
 
+
+        
+
         return distence,distence_mun,correlation,correlation_valid
     def loss_and_acc_on_epoch(self, data_loader, epoch_num=None, train=True, weightedLoss=False, probBins=[]):
         """
