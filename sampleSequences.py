@@ -103,7 +103,7 @@ def sample_from_vae_with_rejection(z_sample, cluster_means, cluster_stddevs, des
             p_others.append(np.average(max_p_others))
             num_accepted_samples += 1
             print(f'{num_accepted_samples} are generate',end='\r')
-    return torch.cat(Generated_sample),p_desireds,p_others
+    return torch.cat(Generated_sample),p_desireds,p_others,cluster_means,cluster_stddevs,desired_label
 
 
 def decode_data(z_sample, model):
@@ -172,14 +172,27 @@ def write_detailed_sequences(path_to_put_folder, path_to_sequences, z_label):
     return detailed_path
 
 
-def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_file: str,orginal_latent_dist, model,p_desireds,p_others):
+def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_file: str,orginal_latent_dist, model,p_desireds,p_others,cluster_means,cluster_stddevs,desired_label):
     data_file = np.load(path_to_data_file)
 
-    label_array = data_file['label']
     ohe_sequences_tensor = data_file['ohe']
 
     latent_dist = encode_data(ohe_sequences_tensor, model)
-    calcuting_cluster_means_and_cluster_stddevs(latent_dist,lables=label_array)
+
+
+    desired_mean = cluster_means[desired_label]
+    desired_stddev = cluster_stddevs[desired_label]
+    pprime_desired = stats.multivariate_normal.pdf(latent_dist.loc.detach().numpy(), mean=desired_mean, cov=np.diag(desired_stddev**2))
+    max_pprime_others = 0
+    for i in range(len(cluster_means)):
+        if i != desired_label:
+            mean = cluster_means[i]
+            stddev = cluster_stddevs[i]
+            p_other = stats.multivariate_normal.pdf(latent_dist.loc.detach().numpy(), mean=mean, cov=np.diag(stddev**2))
+            if np.average(p_other) > np.average(max_pprime_others): # p_other not a number is array
+                max_pprime_others = p_other  
+
+              
     mean_matrix = latent_dist.mean.detach().numpy()
 
     pca = PCA(n_components=1)  # Reduce to 3 dimensions
@@ -198,7 +211,7 @@ def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_f
         f.truncate(0)
 
     with open(path_to_generated, 'r+') as f:
-        f.write("Sequence Generated,Value Generated,z-values,p_desireds,p_others,Sequence Encoded/Decoded,Value Encoded,z'values,Ratio\n")
+        f.write("Sequence Generated,Value Generated,z-values,p_desireds,p_others,Sequence Encoded/Decoded,Value Encoded,z'values,pprime_desired,pprime_otherRatio\n")
 
         decoded = decoded.detach().numpy()
         for i, line in enumerate(file_contents):
@@ -208,7 +221,7 @@ def write_encoded_sequence_wavelength_lii(path_to_generated: str, path_to_data_f
                 ratio = compare_sequences(sequence_original, sequence_generated)
                 z_values = '-'.join([str(lt) for lt in orginal_latent_dist.detach().numpy()[i]])
                 zprime_values =  '-'.join([str(lt) for lt in latent_dist.loc.detach().numpy()[i]])
-                f.write(f"{line[:line.rindex(newline)-1]},{z_values},{p_desireds[i]},{p_others[i]},{sequence_generated},{z_value[i]},{zprime_values},{ratio}\n")
+                f.write(f"{line[:line.rindex(newline)-1]},{z_values},{p_desireds[i]},{p_others[i]},{sequence_generated},{z_value[i]},{zprime_values},{pprime_desired[i]},{max_pprime_others[i]},{ratio}\n")
 
 
 def write_merged_dataset(path_to_base_dataset: str, path_to_generated_samples: str, path_to_put_folder: str):
@@ -244,7 +257,7 @@ def sampling(path_to_data_file: str, path_to_model: str, path_to_put: str) -> np
 
     cluster_means, cluster_stddevs = calcuting_cluster_means_and_cluster_stddevs(latent_dist,label_array)
 
-    z_samples,p_desireds,p_others = sample_from_vae_with_rejection(latent_dist, cluster_means, cluster_stddevs, 2, num_samples=20, threshold=1.0)
+    z_samples,p_desireds,p_others,cluster_means,cluster_stddevs,desired_label = sample_from_vae_with_rejection(latent_dist, cluster_means, cluster_stddevs, 2, num_samples=20, threshold=1.0)
 
     path_to_sequences = f"{path_to_put_folder}/generated-sequences"
     with open(path_to_sequences, 'a', newline='') as f:
@@ -257,10 +270,10 @@ def sampling(path_to_data_file: str, path_to_model: str, path_to_put: str) -> np
             decoded_sample = np.reshape(decoded_sample, (decoded_sample.shape[1], decoded_sample.shape[2]))
             convert_and_write_sample(decoded_sample, f)
 
-    post_processing(path_to_sequences, path_to_put_folder, z_samples, model,p_desireds,p_others)
+    post_processing(path_to_sequences, path_to_put_folder, z_samples, model,p_desireds,p_others,cluster_means,cluster_stddevs,desired_label)
 
 
-def post_processing(path_to_sequences, path_to_put_folder, z_samples, model,p_desireds,p_others):
+def post_processing(path_to_sequences, path_to_put_folder, z_samples, model,p_desireds,p_others,cluster_means,cluster_stddevs,desired_label):
     """This is a function that deals with all of the post processing needed in order to filter out repeated sequences that 
     were generated, create annotated files that list out important values in z space and create .npz files necessary to use
     PCA later on"""
@@ -270,7 +283,7 @@ def post_processing(path_to_sequences, path_to_put_folder, z_samples, model,p_de
 
     detailed_data_path = write_detailed_sequences(path_to_put_folder, path_to_sequences, z_samples[:,0])
     generated_data_path = process_data_file(path_to_sequences, prepended_name="generated-sequences-", path_to_put=path_to_put_folder, return_path=True)
-    write_encoded_sequence_wavelength_lii(detailed_data_path, generated_data_path,z_samples, model,p_desireds,p_others)
+    write_encoded_sequence_wavelength_lii(detailed_data_path, generated_data_path,z_samples, model,p_desireds,p_others,cluster_means,cluster_stddevs,desired_label)
 
     #merged_path = write_merged_dataset("cleandata.csv", path_to_sequences, path_to_put_folder)
     #process_data_file(merged_path, prepended_name="pca-merged-", path_to_put=path_to_put_folder)
