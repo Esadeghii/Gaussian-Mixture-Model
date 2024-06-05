@@ -56,7 +56,7 @@ def calcuting_cluster_means_and_cluster_stddevs(latent_dist: object, lables: obj
 
 
 
-def sample_from_vae_with_rejection(z_sample, cluster_means, cluster_stddevs, desired_label, num_samples=20, threshold=1.0):
+def sample_from_vae_with_rejection(z_sample, cluster_means, cluster_stddevs, desired_label, num_samples=20000, threshold=1.0):
     """
     Samples from the VAE's latent space such that the probability of the points 
     being from the desired cluster is significantly higher than from other clusters.
@@ -257,7 +257,7 @@ def sampling(path_to_data_file: str, path_to_model: str, path_to_put: str) -> np
 
     cluster_means, cluster_stddevs = calcuting_cluster_means_and_cluster_stddevs(latent_dist,label_array)
 
-    z_samples,p_desireds,p_others,cluster_means,cluster_stddevs,desired_label = sample_from_vae_with_rejection(latent_dist, cluster_means, cluster_stddevs, 2, num_samples=20, threshold=1.0)
+    z_samples,p_desireds,p_others,cluster_means,cluster_stddevs,desired_label = sample_from_vae_with_rejection(latent_dist, cluster_means, cluster_stddevs, 4, num_samples=20000, threshold=1.0)
 
     path_to_sequences = f"{path_to_put_folder}/generated-sequences"
     with open(path_to_sequences, 'a', newline='') as f:
