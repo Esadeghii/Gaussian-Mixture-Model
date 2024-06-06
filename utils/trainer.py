@@ -31,7 +31,7 @@ scale = 10
 
 # paramDict = {"beta": betas, "gamma": gammas, "delta": deltas, 
 #      "latentDims": latentDims, "lstmLayers": lstmLayers, "dropout":dropout, "hiddenSize":hiddenSize}
-# filename = "a" + str(params["latentDims"]) + "lds"+str(params["latentDims"])+"b"+str(params["beta"])+"g" +str(params["gamma"])+"d"+str(params["delta"])+"h"+str(params["hiddenSize"])
+#filename = "a" + str(params["latentDims"]) + "lds"+str(params["latentDims"])+"b"+str(params["beta"])+"g" +str(params["gamma"])+"d"+str(params["delta"])+"h"+str(params["hiddenSize"])
    
 #read corresponding sequence and return the distance matrix
 def Distencecs(sequence):
@@ -81,7 +81,7 @@ class Trainer(ABC):
         self.writer = None
     
 
-    def train_model(self, batch_size, num_epochs, log=False, weightedLoss=False):
+    def train_model(self, batch_size, num_epochs,filename,params, log=False, weightedLoss=False):
         """
         Trains the model
         :param batch_size: int,
@@ -89,6 +89,7 @@ class Trainer(ABC):
         :param log: bool, logs epoch stats for viewing in tensorboard if TRUE
         :return: None
         """
+
         # set-up log parameters
         if log:
             ts = time.time()
@@ -125,6 +126,18 @@ class Trainer(ABC):
 
         correlation = []
         correlation_valid = []
+        def averageCols(logMat):
+            rv = np.zeros((num_epochs, 6))
+            for epoch in range(num_epochs):
+                for col in range(1, 6):
+                    num = 0
+                    for row in range(logMat.shape[0]):
+                        if(logMat[row, 0] == epoch):
+                            rv[epoch, col] += logMat[row, col]
+                            num += 1
+                    rv[epoch, col] /= num
+                rv[epoch,0] = epoch
+            return rv
         # train epochs
         for epoch_index in range(num_epochs):
             # update training scheduler
@@ -247,8 +260,13 @@ class Trainer(ABC):
             clusters_distance_latent_valid = []
 
             if epoch_index % 10 == (9):
-                torch.save(model, "./models/weighted/" + filename + epoch_index + ".pt")
-
+                torch.save(self.model, "./models/weighted/" + filename +'e '+ str(epoch_index) + ".pt")
+                par = np.array([ params["beta"], params["gamma"], params["delta"], 
+                params["latentDims"], params["lstmLayers"], params["dropout"], params["hiddenSize"]])
+                tl = averageCols(self.trainList) 
+                vl = averageCols(self.validList)
+                np.savez("./runs/weighted/" + filename  +'e '+ str(epoch_index) + ".npz", par=par, tl=tl, vl=vl, distence=distence,distence_m=distence_mun,correlation=correlation,correlation_valid=correlation_valid,trainLabel = self.dataset.train_label,validLabel = self.dataset.val_label)
+    
 
         
 

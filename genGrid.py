@@ -53,10 +53,11 @@ for params in list(ParameterGrid(paramDict)):   #gridsearch
     #set up the model and trainer
     model = SequenceModel(hidden_layers=params["lstmLayers"], emb_dim=params["latentDims"], dropout=params["dropout"], hidden_size=params["hiddenSize"]) 
     data = SequenceDataset(split=trainTestSplit)
+    filename = "a" + str(params["latentDims"]) + "lds"+str(params["latentDims"])+"b"+str(params["beta"])+"g" +str(params["gamma"])+"d"+str(params["delta"])+"h"+str(params["hiddenSize"])
     if torch.cuda.is_available(): 
         print('cuda available')
         model.cuda()
-    trainer = SequenceTrainer(data, model, beta=params["beta"], gamma=params["gamma"], delta=params["delta"], logTerms=True, IICorVsEpoch=True)
+    trainer = SequenceTrainer(data, model, beta=params["beta"], gamma=params["gamma"], delta=params["delta"], logTerms=True, IICorVsEpoch=True,)
     if torch.cuda.is_available(): 
         trainer.cuda()
     
@@ -65,9 +66,8 @@ for params in list(ParameterGrid(paramDict)):   #gridsearch
     # trainer.train_model(batchSize, numEpochs, log=False)
 
     #train model, using weighted loss function
-    distence ,distence_m,correlation,correlation_valid = trainer.train_model(batchSize, numEpochs, log=False, weightedLoss=weighted)
+    distence ,distence_m,correlation,correlation_valid = trainer.train_model(batchSize, numEpochs,filename,params, log=False, weightedLoss=weighted)
 
-    filename = "a" + str(params["latentDims"]) + "lds"+str(params["latentDims"])+"b"+str(params["beta"])+"g" +str(params["gamma"])+"d"+str(params["delta"])+"h"+str(params["hiddenSize"])
     #save the model
     if weighted:
         torch.save(model, "./models/weighted/" + filename + ".pt")
