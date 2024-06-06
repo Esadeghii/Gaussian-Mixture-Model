@@ -29,7 +29,10 @@ enc.fit(np.array(ALPHABET).reshape(-1,1))
 GMMSums = sum(sum(GmmDData.to_numpy()))
 scale = 10
 
-
+# paramDict = {"beta": betas, "gamma": gammas, "delta": deltas, 
+#      "latentDims": latentDims, "lstmLayers": lstmLayers, "dropout":dropout, "hiddenSize":hiddenSize}
+# filename = "a" + str(params["latentDims"]) + "lds"+str(params["latentDims"])+"b"+str(params["beta"])+"g" +str(params["gamma"])+"d"+str(params["delta"])+"h"+str(params["hiddenSize"])
+   
 #read corresponding sequence and return the distance matrix
 def Distencecs(sequence):
     basesequence = [''.join(enc.inverse_transform(e).reshape(-1).tolist()) for e in sequence] 
@@ -242,6 +245,9 @@ class Trainer(ABC):
             all_label_dis_sum_val = [0]*clusternums
             clusters_distance_latent_train = []
             clusters_distance_latent_valid = []
+
+            if epoch_index % 10 == (9):
+                torch.save(model, "./models/weighted/" + filename + epoch_index + ".pt")
 
 
         
