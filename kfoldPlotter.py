@@ -10,6 +10,8 @@ class Plotter:
     def __init__(self, metricsfolder=path.join(".","runs","kfold"), graphsfolder=path.join(".","graphs","kfold")):
         self.inputfolder = metricsfolder
         self.outputfolder = graphsfolder
+        self.avg_corrT = []
+        self.avg_corrV = []
      
     def genAvgFigure(self, inputFiles, outputFigure):
         data =[]
@@ -46,7 +48,7 @@ class Plotter:
         accM = []
 
         for datasub in data:
-            validMat = data[0]["vl"]
+            validMat = datasub["vl"]
             rLossM = np.append(rLossM, validMat[:,1])
             kdLossM = np.append(kdLossM, validMat[:,2])
             regLossM = np.append(regLossM, validMat[:,3])
@@ -95,11 +97,11 @@ class Plotter:
         ax[4].set_ylabel("Accuracy")
         ax[4].legend(loc="upper right")
 
-        # ax[5].plot(list(range(0, len(correlation)*100, 100)), correlation, label="Training Correlation")
-        # ax[5].plot(list(range(0, len(correlation_valid)*100, 100)), correlation_valid, label="Validation Correlation", ls="--")
-        # ax[5].set_ylabel("Correlation")
-        # ax[5].set_xlabel("Epoch")
-        # ax[5].legend(loc="upper right")
+        ax[5].plot(list(range(0, len(np.mean(self.avg_corrT,axis=0))*100, 100)), np.mean(self.avg_corrT,axis=0), label="Training Correlation")
+        ax[5].plot(list(range(0, len(np.mean(self.avg_corrV,axis=0))*100, 100)), np.mean(self.avg_corrV,axis=0), label="Validation Correlation", ls="--")
+        ax[5].set_ylabel("Correlation")
+        ax[5].set_xlabel("Epoch")
+        ax[5].legend(loc="upper right")
 
 
 
@@ -109,7 +111,7 @@ class Plotter:
 
     def genFigure(self, inputFile , outputFigure):
         data = np.load(path.join(self.inputfolder, inputFile))
-        alpha, beta, gamma, delta, latentDims, lstmLayers, drop, lstmInfo = data["par"]
+        beta, gamma, delta, latentDims, lstmLayers, drop, lstmInfo = data["par"]
 
         trainMat = data["tl"]
         epochsT = trainMat[:,0]
@@ -131,12 +133,10 @@ class Plotter:
         #corelations with each dimention vs epoch
         correlation = data["correlation"]
         correlation_valid = data["correlation_valid"]
+        self.avg_corrT = np.append(self.avg_corrT,correlation)
+        self.avg_corrV = np.append(self.avg_corrV,correlation)
 
 
-        #fig, ax = plt.subplots(3)
-        fig, ax = plt.subplots(6, figsize=(8, 15))
-
-        fig.suptitle(r"$\alpha$=" + str(alpha) + r"$\beta$=" + str(beta) + r" $\gamma$=" + str(gamma) + r" $\delta$=" + str(delta) + " latentDims=" + str(latentDims) + " lstmLayers=" + str(lstmLayers) + " Dropout=" + str(drop) + " lstmInfo=" + str(lstmInfo), fontsize=12)
 
         fig, ax = plt.subplots(6, figsize=(8, 15))
         fig.suptitle(r" $\beta$=" + str(beta) + r" $\gamma$=" + str(gamma) + r" $\delta$=" + str(delta) + " latentDims=" + str(latentDims) + " lstmLayers=" + str(lstmLayers) + " Dropout=" + str(drop) + " lstmInfo=" + str(lstmInfo), fontsize=12)

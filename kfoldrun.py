@@ -27,7 +27,7 @@ dropout =  [0]
 latentDims= [17]#,19]
 lstmLayers = [1]
 hiddenSize = [13]#,15]
-kfolds = 5
+kfolds = 2
 weighted = False
 
 
@@ -69,12 +69,12 @@ for params in list(ParameterGrid(paramDict)):   #gridsearch
         trainer = SequenceTrainer(data, model, beta=params["beta"], gamma=params["gamma"], delta=params["delta"], logTerms=True, IICorVsEpoch=True)
         if torch.cuda.is_available(): 
             trainer.cuda()
-    
+        filename = "a" + str(params["latentDims"]) + "lds"+str(params["latentDims"])+"b"+str(params["beta"])+"g" +str(params["gamma"])+"d"+str(params["delta"])+"h"+str(params["hiddenSize"]) + "fold" + str(i)
+
         #train model, use internal logging
         print("Training Model")
-        distence ,distence_m,correlation,correlation_valid = trainer.train_model(batchSize, numEpochs, log=False, weightedLoss=weighted)
+        distence ,distence_m,correlation,correlation_valid = trainer.train_model(batchSize, numEpochs,filename,params, log=False, weightedLoss=weighted)
 
-        filename = "a" + str(params["latentDims"]) + "lds"+str(params["latentDims"])+"b"+str(params["beta"])+"g" +str(params["gamma"])+"d"+str(params["delta"])+"h"+str(params["hiddenSize"]) + "fold" + str(i)
         unixTimestamp = str(int(time.time()))
 
         unixTimestamp = str(int(time.time()))
