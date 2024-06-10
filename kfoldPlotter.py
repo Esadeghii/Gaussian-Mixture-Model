@@ -10,8 +10,8 @@ class Plotter:
     def __init__(self, metricsfolder=path.join(".","runs","kfold"), graphsfolder=path.join(".","graphs","kfold")):
         self.inputfolder = metricsfolder
         self.outputfolder = graphsfolder
-        self.avg_corrT = np.array([])
-        self.avg_corrV = np.array([])
+        self.avg_corrT = []
+        self.avg_corrV = []
      
     def genAvgFigure(self, inputFiles, outputFigure):
         data =[]
@@ -97,8 +97,8 @@ class Plotter:
         ax[4].set_ylabel("Accuracy")
         ax[4].legend(loc="upper right")
 
-        ax[5].plot(list(range(0, len(np.mean(self.avg_corrT,axis=0))*100, 100)), np.mean(self.avg_corrT,axis=0), label="Training Correlation")
-        ax[5].plot(list(range(0, len(np.mean(self.avg_corrV,axis=0))*100, 100)), np.mean(self.avg_corrV,axis=0), label="Validation Correlation", ls="--")
+        ax[5].plot(list(range(0, np.mean(np.array(self.avg_corrT),axis=0).shape[0]*100, 100)), np.mean(self.avg_corrT,axis=0), label="Training Correlation")
+        ax[5].plot(list(range(0, np.mean(np.array(self.avg_corrV),axis=0).shape[0]*100, 100)), np.mean(self.avg_corrV,axis=0), label="Validation Correlation", ls="--")
         ax[5].set_ylabel("Correlation")
         ax[5].set_xlabel("Epoch")
         ax[5].legend(loc="upper right")
@@ -133,8 +133,8 @@ class Plotter:
         #corelations with each dimention vs epoch
         correlation = data["correlation"]
         correlation_valid = data["correlation_valid"]
-        self.avg_corrT = np.append(self.avg_corrT,correlation)
-        self.avg_corrV = np.append(self.avg_corrV,correlation)
+        self.avg_corrT.append(correlation)
+        self.avg_corrV.append(correlation_valid)
 
 
 
