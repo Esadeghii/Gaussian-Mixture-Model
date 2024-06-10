@@ -10,8 +10,8 @@ class Plotter:
     def __init__(self, metricsfolder=path.join(".","runs","kfold"), graphsfolder=path.join(".","graphs","kfold")):
         self.inputfolder = metricsfolder
         self.outputfolder = graphsfolder
-        self.avg_corrT = []
-        self.avg_corrV = []
+        self.avg_corrT = np.array([])
+        self.avg_corrV = np.array([])
      
     def genAvgFigure(self, inputFiles, outputFigure):
         data =[]
