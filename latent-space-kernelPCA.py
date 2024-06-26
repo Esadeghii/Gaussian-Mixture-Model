@@ -14,11 +14,11 @@ def preprocess_pca(z):
     z_scaled = scaler.fit_transform(z)
 
     # Kernel PCA
-    pca = KernelPCA(n_components=4, kernel='rbf')
+    pca = KernelPCA(n_components=3, kernel='rbf')
     principalComponents = pca.fit_transform(z_scaled)
     explained_variance = np.var(principalComponents, axis=0)
     explained_variance_ratio = explained_variance / np.sum(explained_variance)
-    principalDf = pd.DataFrame(data=principalComponents, columns=['PC1', 'PC2', 'PC3', 'PC4'])
+    principalDf = pd.DataFrame(data=principalComponents, columns=['PC1', 'PC2', 'PC3'])
     return principalComponents, principalDf, explained_variance_ratio
 
 def pca_visualize_3D(principalComponents, principalDf, Labels):

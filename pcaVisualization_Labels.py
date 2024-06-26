@@ -96,22 +96,45 @@ def get_z_from_latent_distribution(model, ohe_data):
     return z
 
 
+# def preprocess_pca(z):
+#     """Preprocessing before pca visualization can occur (returns needed objects such as principal components, principal
+#     degress of freedom and labels"""
+
+#     # PCA
+#     pca = KernelPCA(n_components=4,kernel='rbf')
+#     principalComponents = pca.fit_transform(z)
+#     explained_variance = np.var(principalComponents, axis=0)
+#     explained_variance_ratio = explained_variance / np.sum(explained_variance)
+#     principalDf = pd.DataFrame(data=principalComponents, columns=['PC1', 'PC2', 'PC3', 'PC4'])
+#     # plt.scatter(principalComponents[:,0], principalComponents[:,1])
+#     labels = {
+#         str(i): f"PC {i + 1} ({var:.1f}%)"
+#         for i, var in enumerate(explained_variance_ratio * 100)
+#     }
+#     return principalComponents, principalDf, labels
+
+
 def preprocess_pca(z):
     """Preprocessing before pca visualization can occur (returns needed objects such as principal components, principal
     degress of freedom and labels"""
 
     # PCA
-    pca = KernelPCA(n_components=4,kernel='rbf')
+    pca = KernelPCA(n_components=4, kernel='rbf')
     principalComponents = pca.fit_transform(z)
     explained_variance = np.var(principalComponents, axis=0)
     explained_variance_ratio = explained_variance / np.sum(explained_variance)
+    
+    # Print the variance for each component
+    for i, (var, var_ratio) in enumerate(zip(explained_variance, explained_variance_ratio)):
+        print(f"Component {i+1}: Variance = {var:.4f}, Variance Ratio = {var_ratio:.4f}")
+
     principalDf = pd.DataFrame(data=principalComponents, columns=['PC1', 'PC2', 'PC3', 'PC4'])
-    # plt.scatter(principalComponents[:,0], principalComponents[:,1])
     labels = {
-        str(i): f"PC {i + 1} ({var:.1f}%)"
-        for i, var in enumerate(explained_variance_ratio * 100)
+        str(i): f"PC {i + 1} ({var_ratio * 100:.1f}%)"
+        for i, var_ratio in enumerate(explained_variance_ratio)
     }
     return principalComponents, principalDf, labels
+
 
 
 
