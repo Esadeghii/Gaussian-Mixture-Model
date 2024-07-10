@@ -17,16 +17,16 @@ import math
 from sklearn.preprocessing import OneHotEncoder
 
 GmmData = pd.read_excel('data-and-cleaning/supercleanGMMFilteredClusterd.xlsx')
-GmmDData = pd.read_excel('data-and-cleaning/supercleanGMMFiltered-distances.xlsx')
+#GmmDData = pd.read_excel('data-and-cleaning/supercleanGMMFiltered-distances.xlsx')
 print("Distances Data loaded")
 ALPHABET = ['A','C','G','T']
 GmmDataS = GmmData['Sequence'].to_list()
 clusternums = len(set(GmmData['Label'].to_list()))
 enc = OneHotEncoder()
 enc.fit(np.array(ALPHABET).reshape(-1,1))
-# GmmDData = np.zeros((1963,1963))
-# GMMSums = sum(sum(GmmDData))#.to_numpy()))
-GMMSums = sum(sum(GmmDData.to_numpy()))
+GmmDData = np.zeros((2098,2098))
+GMMSums = sum(sum(GmmDData))#.to_numpy()))
+#GMMSums = sum(sum(GmmDData.to_numpy()))
 scale = 10
 
 # paramDict = {"beta": betas, "gamma": gammas, "delta": deltas, 
@@ -250,9 +250,9 @@ class Trainer(ABC):
                 upper_distance_clusters_latent_train= np.array(pairwise_distances_train)[np.triu_indices_from(np.array(pairwise_distances_train), k=1)]
                 upper_distance_clusters_latent_valid= np.array(pairwise_distances_Val)[np.triu_indices_from(np.array(pairwise_distances_Val), k=1)]
                 
-                correlation.append(np.corrcoef(upper_distance_train,upper_distance_clusters_latent_train)[0,1])
+                # correlation.append(np.corrcoef(upper_distance_train,upper_distance_clusters_latent_train)[0,1])
 
-                correlation_valid.append(np.corrcoef(upper_distance_val, upper_distance_clusters_latent_valid)[0,1])
+                # correlation_valid.append(np.corrcoef(upper_distance_val, upper_distance_clusters_latent_valid)[0,1])
 
             all_label_dis_sum_train = [0]*clusternums
             all_label_dis_sum_val = [0]*clusternums

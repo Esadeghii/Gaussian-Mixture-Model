@@ -5,8 +5,6 @@ Created on Sun Dec 13 20:32:05 2020
 
 @author: alexandergorovits
 """
-#import os
-#import json
 import torch
 from tqdm import tqdm
 import numpy as np
@@ -15,9 +13,8 @@ from scipy.stats import norm
 import torch.nn.functional as F
 
 from utils.trainer import Trainer
-#from sequenceModel import SequenceModel
 from utils.helpers import to_cuda_variable_long, to_cuda_variable, to_numpy
-#from utils.evaluation import *
+from sequenceModel import SequenceModel  # Import your model class
 
 # The Inherited Trainer Class
 class SequenceTrainer(Trainer):
@@ -59,7 +56,7 @@ class SequenceTrainer(Trainer):
         self.rand_seed = rand
         self.logTerms = logTerms
         self.lambda_ = lambda_
-        self.vmim_loss_list = []  # Initialize vmim_loss_list
+        self.mi_loss_list = []  # Initialize mi_loss_list
         if logTerms:  # use James's logging model
             self.trainList = np.zeros((0, 6))  # Training accuracy after each epoch
             self.validList = np.zeros((0, 6))  # validation accuracy after each epoch
@@ -93,11 +90,11 @@ class SequenceTrainer(Trainer):
         :return: tuple of Torch Variable objects
         """
         # score tensor is actually one hot encodings
-        score_tensor, attribTesnsor = batch
+        score_tensor, attribTensor = batch
         # convert input to torch Variables
         batch_data = (
             to_cuda_variable_long(score_tensor),
-            to_cuda_variable_long(attribTesnsor)
+            to_cuda_variable_long(attribTensor)
         )
         return batch_data
 
@@ -112,31 +109,29 @@ class SequenceTrainer(Trainer):
         inputs, labels = batch
         if torch.cuda.is_available():
             inputs = inputs.cuda()
-        outputs, latent_dist, prior, latent_sample, _, mean_z, std_z, mu, log_sigma = self.model(inputs)
+        
+        # Obtain spectra for the current batch
+        c = self.model.spectra[:inputs.size(0)].to(inputs.device)
+        
+        outputs, latent_dist, prior, latent_sample, _, mean_z, std_z = self.model(inputs)
 
         # Compute accuracy
         accuracy = self.mean_accuracy(weights=outputs, target=inputs)
         r_loss = self.reconstruction_loss(inputs, outputs)
         kld_loss = self.compute_kld_loss(latent_dist, prior, beta=self.beta, c=self.capacity)
 
-        sigma = torch.exp(log_sigma)
-        if mu.shape == sigma.shape:
-            c_prime = mu + sigma * torch.randn_like(mu)
-        else:
-            raise ValueError(f"Shape mismatch: mu shape {mu.shape}, sigma shape {sigma.shape}")
+        # MI loss
+        mi_loss = self.model.mutual_information_loss(outputs, c)
+        self.mi_loss_list.append(mi_loss.item())
 
-        # VMIM loss
-        vmim_loss = self.model.vmim_loss(c_prime, mu, log_sigma)
-        self.vmim_loss_list.append(vmim_loss.item())
-
-        loss = r_loss + kld_loss + self.lambda_ * vmim_loss
+        loss = r_loss + kld_loss + self.lambda_ * mi_loss
         
-        print(f"Epoch: {epoch_num}, Batch: {batch_num}")
-        print(f"Reconstruction Loss: {r_loss.item()}")
-        print(f"KL Divergence Loss: {kld_loss.item()}")
-        print(f"VMIM Loss: {vmim_loss.item()}")
-        print(f"Total Loss: {loss.item()}")
-        print(f"Accuracy: {accuracy.item()}")
+#        print(f"Epoch: {epoch_num}, Batch: {batch_num}")
+#        print(f"Reconstruction Loss: {r_loss.item()}")
+#        print(f"KL Divergence Loss: {kld_loss.item()}")
+#        print(f"MI Loss: {mi_loss.item()}")
+#        print(f"Total Loss: {loss.item()}")
+#        print(f"Accuracy: {accuracy.item()}")
 
         # Compute and add regularization loss if needed
         if self.use_reg_loss:

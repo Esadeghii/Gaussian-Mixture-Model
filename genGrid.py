@@ -18,14 +18,14 @@ from plotRun import genPlotForRun
 os.environ["CUDA_VISIBLE_DEVICES"]=""
 
 batchSize = 32
-numEpochs = 20
+numEpochs = 2000
 betas = [0.007]
-gammas = [0.02]#, 0.8, 1, 1.3]
-deltas = [0.1]#, 0.8, 2]
+gammas = [1]#, 0.8, 1, 1.3]
+deltas = [1]#, 0.8, 2]
 dropout =  [0]
-latentDims= [19]
+latentDims= [20,30]
 lstmLayers = [1]
-hiddenSize = [13] #features inside lstm
+hiddenSize = [10,15] #features inside lstm
 trainTestSplit = (0.85, 0.15)
 weighted = False
 

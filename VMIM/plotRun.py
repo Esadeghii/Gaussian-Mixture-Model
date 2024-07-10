@@ -9,10 +9,13 @@ def genFigure(filePath):
     parameters = data["par"]
     print(f"Number of parameters: {len(parameters)}")
     
-    if len(parameters) == 8:
-        beta, gamma, delta, latentDims, lstmLayers, drop, lstmInfo, lambda_ = parameters
+    if len(parameters) == 7:
+        beta, gamma, delta, latentDims, lstmLayers, drop, hiddenSize = parameters
+        lambda_ = None  # Placeholder for lambda if it's not part of parameters
+    elif len(parameters) == 8:
+        beta, gamma, delta, latentDims, lstmLayers, drop, hiddenSize, lambda_ = parameters
     else:
-        raise ValueError(f"Expected 8 parameters, but got {len(parameters)}")
+        raise ValueError(f"Expected 7 or 8 parameters, but got {len(parameters)}")
     
     trainMat = data["tl"]
     epochsT = trainMat[:, 0]
@@ -35,13 +38,21 @@ def genFigure(filePath):
     correlation = data["correlation"]
     correlation_valid = data["correlation_valid"]
     
-    loss_vmimT = data["loss_vmimT"]
-    loss_vmimV = data["loss_vmimV"]
+    if "loss_miT" in data:
+        loss_miT = data["loss_miT"]
+    else:
+        raise KeyError("loss_miT is not found in the archive")
+
+    if "loss_miV" in data:
+        loss_miV = data["loss_miV"]
+    else:
+        raise KeyError("loss_miV is not found in the archive")
 
     fig, ax = plt.subplots(7, figsize=(8, 17))  
     fig.suptitle(r" $\beta$=" + str(beta) + r" $\gamma$=" + str(gamma) + r" $\delta$=" + str(delta) + 
                  " latentDims=" + str(latentDims) + " lstmLayers=" + str(lstmLayers) + 
-                 " Dropout=" + str(drop) + " lstmInfo=" + str(lstmInfo) + " $\lambda$=" + str(lambda_), fontsize=12)
+                 " Dropout=" + str(drop) + " hiddenSize=" + str(hiddenSize) + 
+                 (r" $\lambda$=" + str(lambda_) if lambda_ is not None else ""), fontsize=12)
 
     ax[0].plot(epochsT, rLossT, label="r Loss (Train)")
     ax[0].plot(epochsV, rLossV, label="r Loss (Valid)", ls="--")
@@ -68,19 +79,19 @@ def genFigure(filePath):
     ax[4].set_ylabel("Accuracy")
     ax[4].legend(loc="upper right")
 
-    ax[5].plot(list(range(0, len(correlation)*100, 100)), correlation, label="Training Correlation")
-    ax[5].plot(list(range(0, len(correlation_valid)*100, 100)), correlation_valid, label="Validation Correlation", ls="--")
+    ax[5].plot(list(range(0, len(correlation)*10, 10)), correlation, label="Training Correlation")
+    ax[5].plot(list(range(0, len(correlation_valid)*10, 10)), correlation_valid, label="Validation Correlation", ls="--")
     ax[5].set_ylabel("Correlation")
     ax[5].set_xlabel("Epoch")
     ax[5].legend(loc="upper right")
     
-    # Ensure that the lengths of epochs and loss_vmim arrays match
-    min_len_vmimT = min(len(epochsT), len(loss_vmimT))
-    min_len_vmimV = min(len(epochsV), len(loss_vmimV))
+    # Ensure that the lengths of epochs and loss_mi arrays match
+    min_len_miT = min(len(epochsT), len(loss_miT))
+    min_len_miV = min(len(epochsV), len(loss_miV))
     
-    ax[6].plot(epochsT[:min_len_vmimT], loss_vmimT[:min_len_vmimT], label="Training VMIM Loss")
-    ax[6].plot(epochsV[:min_len_vmimV], loss_vmimV[:min_len_vmimV], label="Validation VMIM Loss", ls="--")
-    ax[6].set_ylabel("VMIM Loss")
+    ax[6].plot(epochsT[:min_len_miT], loss_miT[:min_len_miT], label="Training MI Loss")
+    ax[6].plot(epochsV[:min_len_miV], loss_miV[:min_len_miV], label="Validation MI Loss", ls="--")
+    ax[6].set_ylabel("MI Loss")
     ax[6].set_xlabel("Epoch")
     ax[6].legend(loc="upper right")
 

@@ -1,135 +1,137 @@
 import torch
-from utils.model import Model
+import torch.nn.functional as F
 import pandas as pd
-import os
-import numpy as np
+from utils.model import Model
+
+class DataLoader:
+    def __init__(self, file_path='data-and-cleaning/seq_with_dis.csv'):
+        self.file_path = file_path
+
+    def load_spectra(self, device=torch.device('cpu')):
+        df = pd.read_csv(self.file_path)
+        #print("Columns in CSV file:", df.columns)  # Print column names for debugging
+        selected_columns = [f' dis {i}' for i in range(64)]
+        if not all(col in df.columns for col in selected_columns):
+            raise KeyError(f"Some of the required columns are not in the DataFrame: {selected_columns}")
+        df = df[selected_columns]
+        spectra = torch.tensor(df.values, dtype=torch.float32).to(device)
+        return spectra
 
 class SequenceModel(Model):
-    ALPHABET = ['A', 'C', 'G', 'T']
-
+    ALPHABET = ['A','C','G','T']
     def __init__(
         self,
-        n_chars=4,
-        seq_len=10,
-        bidirectional=True,
-        batch_size=32,
-        hidden_layers=1,
-        hidden_size=32,
-        lin_dim=16,
-        emb_dim=19,  # Ensure emb_dim is correctly set to 19
-        dropout=0,
-        beta=0.007,   # KLD weight
-        gamma=1.0,  # VMIM weight
-        continuous_code_dim=5,  # Dimension of continuous latent code
-        discrete_code_dim=5,    # Dimension of discrete latent code
-        num_categories=10,       # Number of categories for discrete latent code
-        file_path='data-and-cleaning/seq_with_dis_normalized.csv',
-        label_file_path='data-and-cleaning/supercleanGMMFilteredClusterd.xlsx'
+        n_chars = 4,
+        seq_len = 10,
+        bidirectional = True,
+        batch_size = 32,
+        hidden_layers = 1,
+        hidden_size = 32,
+        lin_dim = 16,
+        emb_dim = 10,
+        dropout = 0,
+        file_path='data-and-cleaning/seq_with_dis.csv'
+        #lstm_dropout = 0
     ):
-        super(SequenceModel, self).__init__()
-        self.n_chars = n_chars
-        self.seq_len = seq_len
-        self.hidden_size = hidden_size
-        self.emb_dim = emb_dim
-        self.lin_dim = lin_dim
-        self.batch_size = batch_size
-        self.beta = beta
-        self.gamma = gamma
-        self.continuous_code_dim = continuous_code_dim
-        self.discrete_code_dim = discrete_code_dim
-        self.num_categories = num_categories
-        self.file_path = file_path
-        self.label_file_path = label_file_path
-
+        super(SequenceModel,self).__init__()
+        self.n_chars = n_chars          #Number of DNA Bases, 4
+        self.seq_len = seq_len          #Number of bases in a sequence, 10
+        self.hidden_size = hidden_size  #Number of features hidden in the LSTM
+        self.emb_dim = emb_dim          #Width of the embeded dimention
+        self.lin_dim = lin_dim          #Width of the linear layer to transform the input and output of the latent space
+        self.batch_size = batch_size    #Number of sequences in a batch
+        
+        # Load spectra data
+        self.data_loader = DataLoader(file_path)
+        self.spectra = self.data_loader.load_spectra()
+        
+        #The encoder
         self.emb_lstm = torch.nn.LSTM(
-            input_size=n_chars,
-            hidden_size=hidden_size,
+            input_size=n_chars, 
+            hidden_size=hidden_size, 
             num_layers=hidden_layers,
-            batch_first=True,
-            dropout=dropout,
-            bidirectional=bidirectional
+            batch_first = True,
+            dropout = dropout,
+            bidirectional = bidirectional
         )
 
         self.latent_linear = torch.nn.Sequential(
-            torch.nn.Linear(hidden_size * seq_len * 2, lin_dim),
+            torch.nn.Linear(hidden_size*seq_len*2,lin_dim),
             torch.nn.ReLU()
         )
-
+        
         self.latent_mean = torch.nn.Linear(lin_dim, emb_dim)
         self.latent_log_std = torch.nn.Linear(lin_dim, emb_dim)
 
         self.dec_lin = torch.nn.Sequential(
-            torch.nn.Linear(emb_dim, emb_dim),
+            torch.nn.Linear(emb_dim + 64, emb_dim),
             torch.nn.ReLU()
         )
 
+        #the decoder
         self.dec_lstm = torch.nn.LSTM(
-            input_size=1,
-            num_layers=hidden_layers,
-            dropout=dropout,
-            batch_first=True,
-            bidirectional=bidirectional,
-            hidden_size=hidden_size
+            input_size = 1,
+            num_layers = hidden_layers,
+            dropout = dropout,
+            batch_first = True,
+            bidirectional = bidirectional,
+            hidden_size = hidden_size
         )
 
-        self.dec_final = torch.nn.Linear(hidden_size * 2 * self.emb_dim, n_chars * seq_len)
-
-        # Ensure latent_code_fc outputs the correct dimension
-        self.latent_code_fc = torch.nn.Linear(hidden_size * 2 * self.emb_dim, 2 * emb_dim)
-
+        self.dec_final = torch.nn.Linear(hidden_size*emb_dim*2, n_chars*seq_len)
+        
         self.xavier_initialization()
-
+    
+    #endoder forward pass, takes one hot encoded sequences x and returns q(x|z)
     def encode(self, x):
-        hidden, _ = self.emb_lstm(x.float())
+        hidden, _ = self.emb_lstm(x.float()) # the _ contains unnecessary hidden and cell state info https://pytorch.org/docs/stable/generated/torch.nn.LSTM.html
         hidden = self.latent_linear(torch.flatten(hidden, 1))
         z_mean = self.latent_mean(hidden)
         z_log_std = self.latent_log_std(hidden)
         return torch.distributions.Normal(loc=z_mean, scale=torch.exp(z_log_std))
-
-    def decode(self, z, c=None):
-        hidden = self.dec_lin(z)
-        hidden, _ = self.dec_lstm(hidden.view(-1, self.emb_dim, 1))
-        hidden_flat = torch.flatten(hidden, 1)
-
-        out = self.dec_final(hidden_flat).view(-1, self.seq_len, self.n_chars)
-
-        if c is not None:
-            # Ensure the latent_code dimension is twice the emb_dim
-            latent_code = self.latent_code_fc(hidden_flat)
-            if latent_code.size(1) != 2 * self.emb_dim:
-                raise ValueError(f"Expected latent_code dimension to be {2 * self.emb_dim}, but got {latent_code.size(1)}")
-
-            mu = latent_code[:, :self.emb_dim]
-            log_sigma = latent_code[:, self.emb_dim:2 * self.emb_dim]
-            return out, mu, log_sigma
-        return out
-
+    
+    #decoder forward pass, takes a latent sample z and returns x^hat encoded sequences
+    def decode(self, z, c):
+        z_c = torch.cat((z, c), dim=1)
+        hidden = self.dec_lin(z_c)
+        hidden, _ = self.dec_lstm(hidden.view(-1,self.emb_dim,1))
+        out = self.dec_final(torch.flatten(hidden, 1))
+        return out.view(-1,self.seq_len,self.n_chars)
+    
+    #reparameterization trick for backwards pass
     def reparametrize(self, dist):
         sample = dist.rsample()
         prior = torch.distributions.Normal(torch.zeros_like(dist.loc), torch.ones_like(dist.scale))
         prior_sample = prior.sample()
         return sample, prior_sample, prior
-
+    
+    #full forward pass for entire model
     def forward(self, x):
-        latent_dist = self.encode(x)
+        latent_dist = self.encode(x)   
         latent_sample, prior_sample, prior = self.reparametrize(latent_dist)
-        df = pd.read_csv(self.file_path)
-        selected_columns = [f' dis {i}' for i in range(64)]
-        df = df[selected_columns]
+        c = self.spectra.to(x.device)
+        output = self.decode(latent_sample, c).view(-1,self.seq_len,self.n_chars)
+        return output, latent_dist, prior, latent_sample, prior_sample, latent_dist.loc, torch.log(latent_dist.scale)
 
-        # Convert DataFrame to tensor
-        c = torch.tensor(df.values, dtype=torch.float32).to(x.device)
+    def mutual_information_loss(self, x_reconstructed, c, bins=30):
+        x_reconstructed_flat = x_reconstructed.view(x_reconstructed.size(0), -1)
+        c_flat = c.view(c.size(0), -1)
         
-        output, mu, log_sigma = self.decode(latent_sample, c=c)
+        joint_hist = torch.histc(x_reconstructed_flat + c_flat, bins=bins)
+        x_hist = torch.histc(x_reconstructed_flat, bins=bins)
+        c_hist = torch.histc(c_flat, bins=bins)
         
-        return output, latent_dist, prior, latent_sample, prior_sample, latent_dist.loc, torch.log(latent_dist.scale), mu, log_sigma
+        p_joint = joint_hist / torch.sum(joint_hist)
+        p_x = x_hist / torch.sum(x_hist)
+        p_c = c_hist / torch.sum(c_hist)
+        
+        p_joint = p_joint[p_joint > 0]  # Avoid log(0)
+        p_x = p_x[p_x > 0]
+        p_c = p_c[p_c > 0]
+        
+        mi = torch.sum(p_joint * torch.log(p_joint / (p_x[:, None] * p_c[None, :])))
+        
+        return mi
 
     def __repr__(self):
         return 'SequenceVAE' + self.trainer_config
-
-    def vmim_loss(self, c, mu, log_sigma, epsilon=1e-8):
-        assert c.shape == mu.shape == log_sigma.shape, "Shapes of c, mu, and log_sigma must match"
-        sigma = torch.exp(log_sigma) + epsilon
-        log_p_c_given_theta = -0.5 * ((c - mu)**2 / sigma**2 + 2 * torch.log(sigma) + torch.log(2 * torch.tensor(np.pi)))
-        #regularization = 0.01 * torch.sum(mu**2 + sigma**2)
-        return -log_p_c_given_theta.mean()# + regularization
